@@ -1,47 +1,39 @@
+#include <stdio.h>
 #include <string.h>
 
-#include "CL/cl.h"
-#include "CL/cl_ext.h"
-#include "CL/cl_icd.h"
+#include "use_cl.h"
+#include "in_cl.h"
 
-struct _cl_icd_dispatch disp = {
-	clGetPlatformIDs,
-	clGetPlatformInfo,
-	clGetDeviceIDs,
-	clGetDeviceInfo,
-	NULL,
-};
+cl_int in_clGetPlatformIDs(cl_uint        num_entries,
+			   cl_platform_id *platforms,
+			   cl_uint        *num_platforms);
 
-struct _cl_platform_id {
-	struct _cl_icd_dispatch *dispatch;
-} plat[] = {
-	{&disp},
-};
-
-cl_int ext_clIcdGetPlatformIDsKHR(cl_uint num_entries,
-				  cl_platform_id *platforms,
-				  cl_uint *num_platforms)
+cl_int clIcdGetPlatformIDsKHR(cl_uint        num_entries,
+			      cl_platform_id *platforms,
+			      cl_uint        *num_platforms)
 {
-	if (num_entries == 0 && platforms != NULL)
-		return CL_INVALID_VALUE;
-	if (num_entries > 0 && platforms == NULL)
-		return CL_INVALID_VALUE;
-
-	if (platforms != NULL)
-		platforms[0] = &plat[0];
-
-	if (num_platforms != NULL)
-		*num_platforms = 1;
-
-	return CL_SUCCESS;
+	return in_clGetPlatformIDs(num_entries, platforms, num_platforms);
 }
 
-cl_int ext_clGetPlatformInfo(cl_platform_id platform,
-			     cl_platform_info param_name,
-			     size_t param_value_size,
-			     void *param_value,
-			     size_t *param_value_size_ret)
+static const struct func_name_table {
+	const char *func_name;
+	void *func;
+} table[] = {
+#ifdef OPENCL_ICD_ENABLE
+	{"clIcdGetPlatformIDsKHR", clIcdGetPlatformIDsKHR},
+#endif
+	{NULL, NULL},
+};
+
+void *clGetExtensionFunctionAddress(const char *func_name)
 {
-printf("qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq\n");
-	return CL_INVALID_VALUE;
+	if (func_name == NULL)
+		return NULL;
+
+	for (int i = 0; table[i].func_name; i++) {
+		if (strcmp(func_name, table[i].func_name) == 0)
+			return table[i].func;
+	}
+
+	return NULL;
 }
