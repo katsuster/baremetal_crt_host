@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-project(metal_crt_host)
+project(baremetal_crt_host)
 
 cmake_minimum_required(VERSION 3.13)
 enable_language(C)
