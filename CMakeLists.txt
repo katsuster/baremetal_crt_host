@@ -1,6 +1,20 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6.0)
-PROJECT(test-ocl)
+# SPDX-License-Identifier: Apache-2.0
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include)
+project(metal_crt_host)
 
-ADD_SUBDIRECTORY(src)
+cmake_minimum_required(VERSION 3.13)
+enable_language(C)
+
+# Common settings
+set(PRJ_LIB_NAME bmetal)
+
+add_library(${PRJ_LIB_NAME} SHARED)
+
+target_include_directories(${PRJ_LIB_NAME}
+  PUBLIC
+  ${CMAKE_SOURCE_DIR}/include
+  )
+
+add_subdirectory(src)
+
+target_link_libraries(${PRJ_LIB_NAME})
