@@ -193,13 +193,6 @@ struct _cl_platform_id {
 	{ &disp, OPENCL_ICD_MAGIC, },
 };
 
-cl_int clGetPlatformIDs(cl_uint num_entries,
-			cl_platform_id *platforms,
-			cl_uint *num_platforms)
-{
-	return in_clGetPlatformIDs(num_entries, platforms, num_platforms);
-}
-
 cl_int in_clGetPlatformIDs(cl_uint         num_entries,
 			   cl_platform_id  *platforms,
 			   cl_uint         *num_platforms)
@@ -216,15 +209,6 @@ cl_int in_clGetPlatformIDs(cl_uint         num_entries,
 		*num_platforms = 1;
 
 	return CL_SUCCESS;
-}
-
-cl_int clGetPlatformInfo(cl_platform_id   platform,
-			 cl_platform_info param_name,
-			 size_t           param_value_size,
-			 void             *param_value,
-			 size_t           *param_value_size_ret)
-{
-	return in_clGetPlatformInfo(platform, param_name, param_value_size, param_value, param_value_size_ret);
 }
 
 cl_int in_clGetPlatformInfo(cl_platform_id   platform,
