@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 #ifndef OPENCL_ICD_USE_CL
 #define OPENCL_ICD_USE_CL
 
