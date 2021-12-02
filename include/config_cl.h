@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#ifndef OPENCL_ICD_USE_CL
-#define OPENCL_ICD_USE_CL
+#ifndef BAREMETAL_CRT_HOST_CONFIG_CL
+#define BAREMETAL_CRT_HOST_CONFIG_CL
 
 /* temp config */
 #define OPENCL_ICD_ENABLE    1
@@ -28,4 +28,4 @@
 #include "CL/cl.h"
 #include "CL/cl_icd.h"
 
-#endif /* OPENCL_ICD_USE_CL */
+#endif /* BAREMETAL_CRT_HOST_CONFIG_CL */

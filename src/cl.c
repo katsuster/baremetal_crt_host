@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "use_cl.h"
 #include "in_cl.h"
 
 static struct _cl_icd_dispatch disp = {
@@ -186,10 +185,7 @@ static struct _cl_icd_dispatch disp = {
 	NULL, //in_clCreateImageWithProperties,
 };
 
-struct _cl_platform_id {
-	struct _cl_icd_dispatch *dispatch;
-	int magic;
-} plat[] = {
+struct _cl_platform_id plat[] = {
 	{ &disp, OPENCL_ICD_MAGIC, },
 };
 

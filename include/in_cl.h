@@ -14,10 +14,11 @@
  * limitations under the License.
  ******************************************************************************/
 
-#ifndef OPENCL_ICD_IN_CL_H
-#define OPENCL_ICD_IN_CL_H
+#ifndef BAREMETAL_CRT_HOST_IN_CL_H
+#define BAREMETAL_CRT_HOST_IN_CL_H
 
-#include "use_cl.h"
+#include "config_cl.h"
+#include "type_cl.h"
 
 /* Platform API */
 extern CL_API_ENTRY cl_int CL_API_CALL
@@ -989,4 +990,4 @@ in_clEnqueueTask(cl_command_queue  command_queue,
                  const cl_event *  event_wait_list,
                  cl_event *        event) CL_EXT_SUFFIX__VERSION_1_2_DEPRECATED;
 
-#endif  /* OPENCL_ICD_IN_CL_H */
+#endif /* BAREMETAL_CRT_HOST_IN_CL_H */
