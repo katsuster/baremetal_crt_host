@@ -45,12 +45,14 @@ static const struct func_name_table {
 
 void *clGetExtensionFunctionAddress(const char *func_name)
 {
-	if (func_name == NULL)
+	if (func_name == NULL) {
 		return NULL;
+	}
 
 	for (int i = 0; table[i].func_name; i++) {
-		if (strcmp(func_name, table[i].func_name) == 0)
+		if (strcmp(func_name, table[i].func_name) == 0) {
 			return table[i].func;
+		}
 	}
 
 	return NULL;

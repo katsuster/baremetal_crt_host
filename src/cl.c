@@ -197,16 +197,20 @@ cl_int in_clGetPlatformIDs(cl_uint         num_entries,
 			   cl_platform_id  *platforms,
 			   cl_uint         *num_platforms)
 {
-	if (num_entries == 0 && platforms != NULL)
+	if (num_entries == 0 && platforms != NULL) {
 		return CL_INVALID_VALUE;
-	if (num_entries > 0 && platforms == NULL)
+	}
+	if (num_entries > 0 && platforms == NULL) {
 		return CL_INVALID_VALUE;
+	}
 
-	if (platforms != NULL)
+	if (platforms != NULL) {
 		platforms[0] = &plat[0];
+	}
 
-	if (num_platforms != NULL)
+	if (num_platforms != NULL) {
 		*num_platforms = 1;
+	}
 
 	return CL_SUCCESS;
 }
@@ -221,10 +225,12 @@ cl_int in_clGetPlatformInfo(cl_platform_id   platform,
 	size_t siz = 0;
 
 #ifdef OPENCL_ICD_ENABLE
-	if (platform == NULL)
+	if (platform == NULL) {
 		return CL_INVALID_PLATFORM;
-	if (platform != NULL && platform->magic != OPENCL_ICD_MAGIC)
+	}
+	if (platform != NULL && platform->magic != OPENCL_ICD_MAGIC) {
 		return CL_INVALID_PLATFORM;
+	}
 #endif
 
 	switch (param_name) {
@@ -257,14 +263,16 @@ cl_int in_clGetPlatformInfo(cl_platform_id   platform,
 	}
 
 	if (param_value != NULL) {
-		if (param_value_size < siz)
+		if (param_value_size < siz) {
 			return CL_INVALID_VALUE;
+		}
 
 		memcpy(param_value, val, siz);
 	}
 
-	if (param_value_size_ret != NULL)
+	if (param_value_size_ret != NULL) {
 		*param_value_size_ret = siz;
+	}
 
 	return CL_SUCCESS;
 }
@@ -276,16 +284,20 @@ cl_int in_clGetDeviceIDs(cl_platform_id platform,
 			 cl_uint        *num_devices)
 {
 #ifdef OPENCL_ICD_ENABLE
-	if (platform == NULL)
+	if (platform == NULL) {
 		return CL_INVALID_PLATFORM;
-	if (platform != NULL && platform->magic != OPENCL_ICD_MAGIC)
+	}
+	if (platform != NULL && platform->magic != OPENCL_ICD_MAGIC) {
 		return CL_INVALID_PLATFORM;
+	}
 #endif
 
-	if (devices != NULL && num_entries == 0)
+	if (devices != NULL && num_entries == 0) {
 		return CL_INVALID_VALUE;
-	if (devices == NULL && num_devices == NULL)
+	}
+	if (devices == NULL && num_devices == NULL) {
 		return CL_INVALID_VALUE;
+	}
 
 	return CL_DEVICE_NOT_FOUND;
 }
