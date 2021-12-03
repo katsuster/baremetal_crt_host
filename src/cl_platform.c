@@ -10,7 +10,7 @@ static struct _cl_icd_dispatch disp = {
 	in_clGetPlatformIDs,
 	in_clGetPlatformInfo,
 	in_clGetDeviceIDs,
-	NULL, //in_clGetDeviceInfo,
+	in_clGetDeviceInfo,
 	in_clCreateContext,
 	in_clCreateContextFromType,
 	NULL, //in_clRetainContext,
@@ -219,15 +219,11 @@ cl_int in_clGetPlatformInfo(cl_platform_id   platform,
 {
 	void *val = "";
 	size_t siz = 0;
+	cl_int r;
 
-#ifdef OPENCL_ICD_ENABLE
-	if (platform == NULL) {
-		return CL_INVALID_PLATFORM;
+	if ((r = platform_is_valid(platform)) != CL_SUCCESS) {
+		return r;
 	}
-	if (platform != NULL && platform->magic != OPENCL_ICD_MAGIC) {
-		return CL_INVALID_PLATFORM;
-	}
-#endif
 
 	switch (param_name) {
 	case CL_PLATFORM_PROFILE:
@@ -271,54 +267,4 @@ cl_int in_clGetPlatformInfo(cl_platform_id   platform,
 	}
 
 	return CL_SUCCESS;
-}
-
-cl_int in_clGetDeviceIDs(cl_platform_id platform,
-			 cl_device_type device_type,
-			 cl_uint        num_entries,
-			 cl_device_id   *devices,
-			 cl_uint        *num_devices)
-{
-#ifdef OPENCL_ICD_ENABLE
-	if (platform == NULL) {
-		return CL_INVALID_PLATFORM;
-	}
-	if (platform != NULL && platform->magic != OPENCL_ICD_MAGIC) {
-		return CL_INVALID_PLATFORM;
-	}
-#endif
-
-	if (devices != NULL && num_entries == 0) {
-		return CL_INVALID_VALUE;
-	}
-	if (devices == NULL && num_devices == NULL) {
-		return CL_INVALID_VALUE;
-	}
-
-	return CL_DEVICE_NOT_FOUND;
-}
-
-cl_context in_clCreateContext(const cl_context_properties *properties,
-			      cl_uint            num_devices,
-			      const cl_device_id *devices,
-			      void (CL_CALLBACK  *pfn_notify)(const char *errinfo,
-							      const void *private_info,
-							      size_t     cb,
-							      void       *user_data),
-			      void               *user_data,
-			      cl_int             *errcode_ret)
-{
-	return NULL;
-}
-
-cl_context in_clCreateContextFromType(const cl_context_properties *properties,
-				      cl_device_type      device_type,
-				      void (CL_CALLBACK   *pfn_notify)(const char *errinfo,
-								       const void *private_info,
-								       size_t     cb,
-								       void       *user_data),
-				      void                *user_data,
-				      cl_int              *errcode_ret)
-{
-	return NULL;
 }
