@@ -8,13 +8,19 @@ enable_language(C)
 # Common settings
 set(PRJ_LIB_NAME bmetal)
 
-add_library(${PRJ_LIB_NAME} SHARED)
+# CMake basic tools to add/use directories, sources and configs
+include(${CMAKE_SOURCE_DIR}/cmake/tools.cmake)
 
-target_include_directories(${PRJ_LIB_NAME}
-  PUBLIC
-  ${CMAKE_SOURCE_DIR}/include
+# Target: Library
+add_library(${PRJ_LIB_NAME} SHARED)
+target_link_libraries(${PRJ_LIB_NAME})
+
+# Compiler settings
+prj_compile_options(-g)
+
+# Install, include settings
+prj_include_directories(
+  PUBLIC ${CMAKE_SOURCE_DIR}/include
   )
 
 add_subdirectory(src)
-
-target_link_libraries(${PRJ_LIB_NAME})
