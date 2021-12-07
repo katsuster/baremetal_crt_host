@@ -16,7 +16,9 @@ add_library(${PRJ_LIB_NAME} SHARED)
 target_link_libraries(${PRJ_LIB_NAME})
 
 # Compiler settings
-prj_compile_options(-g)
+if("${CC}" STREQUAL "gcc")
+  include(${CMAKE_SOURCE_DIR}/cmake/gcc.cmake)
+endif()
 
 # Install, include settings
 prj_include_directories(
