@@ -1,8 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 prj_sources(
-  cl_icd.c
-  cl_platform.c
-  cl_device.c
-  cl_context.c
+  gdb_remote.c
   )

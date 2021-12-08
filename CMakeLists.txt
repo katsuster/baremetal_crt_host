@@ -33,6 +33,8 @@ endif()
 # Install, include settings
 prj_include_directories(
   PUBLIC ${CMAKE_SOURCE_DIR}/include
+  PRIVATE ${CMAKE_BINARY_DIR}/include
   )
 
+add_subdirectory(drivers)
 add_subdirectory(src)
