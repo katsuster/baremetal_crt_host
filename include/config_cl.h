@@ -3,6 +3,8 @@
 #ifndef BAREMETAL_CRT_HOST_CONFIG_CL
 #define BAREMETAL_CRT_HOST_CONFIG_CL
 
+#include <generated/autoconf.h>
+
 /* temp config */
 #define OPENCL_ICD_ENABLE    1
 
@@ -25,7 +27,7 @@
 #define CL_USE_DEPRECATED_OPENCL_2_0_APIS
 #define CL_USE_DEPRECATED_OPENCL_2_1_APIS
 
-#include "CL/cl.h"
-#include "CL/cl_icd.h"
+#include <CL/cl.h>
+#include <CL/cl_icd.h>
 
 #endif /* BAREMETAL_CRT_HOST_CONFIG_CL */
