@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "in_cl.h"
+#include <in_cl.h>
 
 static struct _cl_icd_dispatch disp = {
 	/* OpenCL 1.0 */

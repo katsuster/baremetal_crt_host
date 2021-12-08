@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "in_cl.h"
+#include <in_cl.h>
 
 cl_context in_clCreateContext(const cl_context_properties *properties,
 			      cl_uint            num_devices,
@@ -28,4 +28,9 @@ cl_context in_clCreateContextFromType(const cl_context_properties *properties,
 				      cl_int              *errcode_ret)
 {
 	return NULL;
+}
+
+cl_int in_clReleaseContext(cl_context context)
+{
+	return CL_SUCCESS;
 }

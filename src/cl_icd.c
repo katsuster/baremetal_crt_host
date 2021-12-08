@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "in_cl.h"
+#include <in_cl.h>
 
 cl_int in_clGetPlatformIDs(cl_uint        num_entries,
 			   cl_platform_id *platforms,
