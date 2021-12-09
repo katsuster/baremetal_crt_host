@@ -221,7 +221,7 @@ cl_int in_clGetPlatformInfo(cl_platform_id   platform,
 	size_t siz = 0;
 	cl_int r;
 
-	if ((r = platform_is_valid(platform)) != CL_SUCCESS) {
+	if ((r = plat_is_valid(platform)) != CL_SUCCESS) {
 		return r;
 	}
 
