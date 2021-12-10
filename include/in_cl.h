@@ -17,8 +17,8 @@
 #ifndef BAREMETAL_CRT_HOST_IN_CL_H
 #define BAREMETAL_CRT_HOST_IN_CL_H
 
-#include "config_cl.h"
-#include "type_cl.h"
+#include <config_cl.h>
+#include <type_cl.h>
 
 /* Platform API */
 extern CL_API_ENTRY cl_int CL_API_CALL

@@ -82,7 +82,7 @@ static struct _cl_icd_dispatch disp = {
 	NULL, //in_clEnqueueAcquireGLObjects,
 	NULL, //in_clEnqueueReleaseGLObjects,
 	NULL, //in_clGetGLContextInfoKHR,
-	
+
 	/* cl_khr_d3d10_sharing */
 	NULL, //in_clGetDeviceIDsFromD3D10KHR,
 	NULL, //in_clCreateFromD3D10BufferKHR,
@@ -90,7 +90,7 @@ static struct _cl_icd_dispatch disp = {
 	NULL, //in_clCreateFromD3D10Texture3DKHR,
 	NULL, //in_clEnqueueAcquireD3D10ObjectsKHR,
 	NULL, //in_clEnqueueReleaseD3D10ObjectsKHR,
-	
+
 	/* OpenCL 1.1 */
 	NULL, //in_clSetEventCallback,
 	NULL, //in_clCreateSubBuffer,
@@ -100,15 +100,15 @@ static struct _cl_icd_dispatch disp = {
 	NULL, //in_clEnqueueReadBufferRect,
 	NULL, //in_clEnqueueWriteBufferRect,
 	NULL, //in_clEnqueueCopyBufferRect,
-	
+
 	/* cl_ext_device_fission */
 	NULL, //in_clCreateSubDevicesEXT,
 	NULL, //in_clRetainDeviceEXT,
 	NULL, //in_clReleaseDeviceEXT,
-	
+
 	/* cl_khr_gl_event */
 	NULL, //in_clCreateEventFromGLsyncKHR,
-	
+
 	/* OpenCL 1.2 */
 	NULL, //in_clCreateSubDevices,
 	NULL, //in_clRetainDevice,
@@ -126,7 +126,7 @@ static struct _cl_icd_dispatch disp = {
 	NULL, //in_clEnqueueBarrierWithWaitList,
 	NULL, //in_clGetExtensionFunctionAddressForPlatform,
 	NULL, //in_clCreateFromGLTexture,
-	
+
 	/* cl_khr_d3d11_sharing */
 	NULL, //in_clGetDeviceIDsFromD3D11KHR,
 	NULL, //in_clCreateFromD3D11BufferKHR,
@@ -135,20 +135,20 @@ static struct _cl_icd_dispatch disp = {
 	NULL, //in_clCreateFromDX9MediaSurfaceKHR,
 	NULL, //in_clEnqueueAcquireD3D11ObjectsKHR,
 	NULL, //in_clEnqueueReleaseD3D11ObjectsKHR,
-	
+
 	/* cl_khr_dx9_media_sharing */
 	NULL, //in_clGetDeviceIDsFromDX9MediaAdapterKHR,
 	NULL, //in_clEnqueueAcquireDX9MediaSurfacesKHR,
 	NULL, //in_clEnqueueReleaseDX9MediaSurfacesKHR,
-	
+
 	/* cl_khr_egl_image */
 	NULL, //in_clCreateFromEGLImageKHR,
 	NULL, //in_clEnqueueAcquireEGLObjectsKHR,
 	NULL, //in_clEnqueueReleaseEGLObjectsKHR,
-	
+
 	/* cl_khr_egl_event */
 	NULL, //in_clCreateEventFromEGLSyncKHR,
-	
+
 	/* OpenCL 2.0 */
 	NULL, //in_clCreateCommandQueueWithProperties,
 	NULL, //in_clCreatePipe,
@@ -163,10 +163,10 @@ static struct _cl_icd_dispatch disp = {
 	NULL, //in_clCreateSamplerWithProperties,
 	NULL, //in_clSetKernelArgSVMPointer,
 	NULL, //in_clSetKernelExecInfo,
-	
+
 	/* cl_khr_sub_groups */
 	NULL, //in_clGetKernelSubGroupInfoKHR,
-	
+
 	/* OpenCL 2.1 */
 	NULL, //in_clCloneKernel,
 	NULL, //in_clCreateProgramWithIL,
@@ -175,11 +175,11 @@ static struct _cl_icd_dispatch disp = {
 	NULL, //in_clGetHostTimer,
 	NULL, //in_clGetKernelSubGroupInfo,
 	NULL, //in_clSetDefaultDeviceCommandQueue,
-	
+
 	/* OpenCL 2.2 */
 	NULL, //in_clSetProgramReleaseCallback,
 	NULL, //in_clSetProgramSpecializationConstant,
-	
+
 	/* OpenCL 3.0 */
 	NULL, //in_clCreateBufferWithProperties,
 	NULL, //in_clCreateImageWithProperties,
