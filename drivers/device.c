@@ -7,6 +7,10 @@
 #include <in_cl.h>
 #include <drivers/device.h>
 
+#ifdef CONFIG_GDB
+#include <drivers/gdb/gdb_remote.h>
+#endif
+
 struct dev_group {
 	cl_int (*init)(cl_platform_id platform);
 	cl_int (*exit)(cl_platform_id platform);
@@ -21,6 +25,12 @@ static atomic_int in_dev_num;
 static atomic_int in_uniq_id;
 
 static struct dev_group in_dev_groups[] = {
+#ifdef CONFIG_GDB
+	{
+		.init = gdb_remote_init,
+		.exit = gdb_remote_exit,
+	},
+#endif
 };
 
 cl_int dev_get_number(void)
