@@ -7,4 +7,6 @@
 #include <drivers/platform.h>
 #include <drivers/device.h>
 
+#define ARRAY_OF(x)    (sizeof(x) / sizeof((x)[0]))
+
 #endif /* BAREMETAL_CRT_HOST_TYPE_CL */

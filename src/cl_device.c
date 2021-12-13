@@ -12,6 +12,7 @@ cl_int in_clGetDeviceIDs(cl_platform_id platform,
 			 cl_device_id   *devices,
 			 cl_uint        *num_devices)
 {
+	cl_uint num;
 	cl_int r;
 
 	if ((r = plat_is_valid(platform)) != CL_SUCCESS) {
@@ -25,16 +26,19 @@ cl_int in_clGetDeviceIDs(cl_platform_id platform,
 		return CL_INVALID_VALUE;
 	}
 
-	r = dev_probe_devices(platform);
+	r = dev_init(platform);
 	if (r != CL_SUCCESS) {
 		return r;
 	}
 
-	if (devices != NULL) {
-		*devices = dev_get_devices();
+	num = num_entries;
+	r = dev_get_devices(devices, device_type, &num);
+	if (r != CL_SUCCESS) {
+		return r;
 	}
+
 	if (num_devices != NULL) {
-		*num_devices = dev_get_number();
+		*num_devices = num;
 	}
 
 	return CL_SUCCESS;
