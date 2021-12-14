@@ -17,9 +17,9 @@ static struct _cl_icd_dispatch disp = {
 	in_clReleaseContext,
 	in_clGetContextInfo,
 	NULL, //in_clCreateCommandQueue,
-	NULL, //in_clRetainCommandQueue,
-	NULL, //in_clReleaseCommandQueue,
-	NULL, //in_clGetCommandQueueInfo,
+	in_clRetainCommandQueue,
+	in_clReleaseCommandQueue,
+	in_clGetCommandQueueInfo,
 	NULL, //in_clSetCommandQueueProperty,
 	NULL, //in_clCreateBuffer,
 	NULL, //in_clCreateImage2D,
@@ -150,7 +150,7 @@ static struct _cl_icd_dispatch disp = {
 	NULL, //in_clCreateEventFromEGLSyncKHR,
 
 	/* OpenCL 2.0 */
-	NULL, //in_clCreateCommandQueueWithProperties,
+	in_clCreateCommandQueueWithProperties,
 	NULL, //in_clCreatePipe,
 	NULL, //in_clGetPipeInfo,
 	NULL, //in_clSVMAlloc,
