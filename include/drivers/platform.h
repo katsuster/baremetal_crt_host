@@ -7,7 +7,7 @@
 
 struct _cl_platform_id {
 	struct _cl_icd_dispatch *dispatch;
-	int magic;
+	cl_int magic;
 };
 
 static inline cl_int plat_is_valid(cl_platform_id platform)
