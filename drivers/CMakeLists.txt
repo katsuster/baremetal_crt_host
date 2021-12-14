@@ -3,6 +3,7 @@
 prj_sources(
   platform.c
   device.c
+  context.c
   )
 
 add_subdirectory_ifdef(CONFIG_GDB gdb)
