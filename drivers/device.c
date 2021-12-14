@@ -6,6 +6,7 @@
 
 #include <in_cl.h>
 #include <drivers/device.h>
+#include <drivers/platform.h>
 
 #ifdef CONFIG_GDB
 #include <drivers/gdb/gdb_remote.h>
@@ -22,7 +23,6 @@ static struct _cl_device_id in_head = {
 	.id = -1,
 };
 static atomic_int in_dev_num;
-static atomic_int in_uniq_id;
 
 static struct dev_group in_dev_groups[] = {
 #ifdef CONFIG_GDB
@@ -71,10 +71,6 @@ cl_int dev_get_devices(cl_device_id *pdev, cl_device_type typ, cl_uint *sz)
 	}
 }
 
-static cl_int dev_get_uniq_id(void)
-{
-	return atomic_fetch_add_explicit(&in_uniq_id, 1, memory_order_relaxed);
-}
 
 cl_int dev_alloc(cl_platform_id plat, cl_device_id *dev)
 {
@@ -96,7 +92,7 @@ cl_int dev_alloc(cl_platform_id plat, cl_device_id *dev)
 
 	t->dispatch = plat->dispatch;
 	t->magic = OPENCL_ICD_MAGIC;
-	t->id = dev_get_uniq_id();
+	t->id = plat_get_uniq_id();
 	t->plat = plat;
 
 	*dev = t;

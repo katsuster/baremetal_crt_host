@@ -23,4 +23,6 @@ static inline cl_int plat_is_valid(cl_platform_id platform)
 	return CL_SUCCESS;
 }
 
+cl_int plat_get_uniq_id(void);
+
 #endif /* BAREMETAL_CRT_HOST_DRV_PLATFORM */
