@@ -24,7 +24,7 @@ struct _cl_device_id {
 	cl_device_id dev_next;
 };
 
-static inline cl_int dev_is_valid(cl_device_id device)
+static inline cl_int dev_is_valid(const cl_device_id device)
 {
 #ifdef OPENCL_ICD_ENABLE
 	if (device == NULL) {

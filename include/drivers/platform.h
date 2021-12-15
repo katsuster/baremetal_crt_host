@@ -10,7 +10,7 @@ struct _cl_platform_id {
 	cl_int magic;
 };
 
-static inline cl_int plat_is_valid(cl_platform_id platform)
+static inline cl_int plat_is_valid(const cl_platform_id platform)
 {
 #ifdef OPENCL_ICD_ENABLE
 	if (platform == NULL) {
