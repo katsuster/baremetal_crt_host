@@ -5,6 +5,7 @@ prj_sources(
   device.c
   context.c
   command_queue.c
+  program.c
   )
 
 add_subdirectory_ifdef(CONFIG_GDB gdb)
