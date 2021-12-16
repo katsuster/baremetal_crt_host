@@ -8,4 +8,5 @@ prj_sources(
   cl_command_queue.c
   cl_program.c
   cl_kernel.c
+  cl_mem.c
   )

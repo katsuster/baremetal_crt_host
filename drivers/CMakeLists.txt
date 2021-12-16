@@ -7,6 +7,7 @@ prj_sources(
   command_queue.c
   program.c
   kernel.c
+  mem.c
   )
 
 add_subdirectory_ifdef(CONFIG_GDB gdb)
