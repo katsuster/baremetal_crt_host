@@ -7,4 +7,5 @@ prj_sources(
   cl_context.c
   cl_command_queue.c
   cl_program.c
+  cl_kernel.c
   )

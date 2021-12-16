@@ -41,10 +41,10 @@ static struct _cl_icd_dispatch disp = {
 	NULL, //in_clUnloadCompiler,
 	NULL, //in_clGetProgramInfo,
 	NULL, //in_clGetProgramBuildInfo,
-	NULL, //in_clCreateKernel,
-	NULL, //in_clCreateKernelsInProgram,
-	NULL, //in_clRetainKernel,
-	NULL, //in_clReleaseKernel,
+	in_clCreateKernel,
+	in_clCreateKernelsInProgram,
+	in_clRetainKernel,
+	in_clReleaseKernel,
 	NULL, //in_clSetKernelArg,
 	NULL, //in_clGetKernelInfo,
 	NULL, //in_clGetKernelWorkGroupInfo,
@@ -168,7 +168,7 @@ static struct _cl_icd_dispatch disp = {
 	NULL, //in_clGetKernelSubGroupInfoKHR,
 
 	/* OpenCL 2.1 */
-	NULL, //in_clCloneKernel,
+	in_clCloneKernel,
 	NULL, //in_clCreateProgramWithIL,
 	NULL, //in_clEnqueueSVMMigrateMem,
 	NULL, //in_clGetDeviceAndHostTimer,
