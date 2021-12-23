@@ -70,3 +70,20 @@ cl_int in_clReleaseKernel(cl_kernel kernel)
 
 	return CL_SUCCESS;
 }
+
+cl_int in_clSetKernelArg(cl_kernel  kernel,
+			 cl_uint    arg_index,
+			 size_t     arg_size,
+			 const void *arg_value)
+{
+	cl_int r;
+
+	if (arg_value == NULL) {
+		return CL_INVALID_ARG_VALUE;
+	}
+	if ((r = kern_is_valid(kernel)) != CL_SUCCESS) {
+		return r;
+	}
+
+	return CL_SUCCESS;
+}

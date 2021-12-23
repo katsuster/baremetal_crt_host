@@ -9,4 +9,5 @@ prj_sources(
   cl_program.c
   cl_kernel.c
   cl_mem.c
+  cl_enqueue.c
   )
