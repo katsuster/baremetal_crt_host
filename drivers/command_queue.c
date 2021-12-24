@@ -21,7 +21,7 @@ cl_int cmdq_alloc(cl_context ctx, cl_command_queue *cmdq)
 
 	t = calloc(1, sizeof(struct _cl_command_queue));
 	if (t == NULL) {
-		fprintf(stderr, "cmdq_alloc: cannot calloc memory\n");
+		log_err("cannot calloc cl_command_queue.\n");
 		return CL_OUT_OF_HOST_MEMORY;
 	}
 

@@ -71,7 +71,6 @@ cl_int dev_get_devices(cl_device_id *pdev, cl_device_type typ, cl_uint *sz)
 	}
 }
 
-
 cl_int dev_alloc(cl_platform_id plat, cl_device_id *dev)
 {
 	cl_device_id t;
@@ -86,7 +85,7 @@ cl_int dev_alloc(cl_platform_id plat, cl_device_id *dev)
 
 	t = calloc(1, sizeof(struct _cl_device_id));
 	if (t == NULL) {
-		fprintf(stderr, "dev_alloc: cannot calloc memory\n");
+		log_err("cannot calloc cl_device_id\n");
 		return CL_OUT_OF_HOST_MEMORY;
 	}
 
@@ -125,7 +124,7 @@ cl_int dev_add(cl_device_id dev)
 	while (d->dev_next != NULL) {
 		d = d->dev_next;
 		if (d == dev) {
-			fprintf(stderr, "dev_add: already existed\n");
+			log_err("device already existed.\n");
 			return CL_INVALID_VALUE;
 		}
 	}
@@ -161,7 +160,7 @@ cl_int dev_remove(cl_device_id dev)
 		}
 	}
 	if (!found) {
-		fprintf(stderr, "dev_remove: not found\n");
+		log_warn("device not found.\n");
 		return CL_INVALID_VALUE;
 	}
 

@@ -20,7 +20,7 @@ cl_int ctx_alloc(cl_device_id dev, cl_context *ctx)
 
 	t = calloc(1, sizeof(struct _cl_context));
 	if (t == NULL) {
-		fprintf(stderr, "ctx_alloc: cannot calloc memory\n");
+		log_err("cannot calloc cl_context.\n");
 		return CL_OUT_OF_HOST_MEMORY;
 	}
 

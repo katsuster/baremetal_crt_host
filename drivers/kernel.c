@@ -21,7 +21,7 @@ cl_int kern_alloc(cl_program prg, cl_kernel *kern)
 
 	t = calloc(1, sizeof(struct _cl_kernel));
 	if (t == NULL) {
-		fprintf(stderr, "kern_alloc: cannot calloc memory\n");
+		log_err("cannot calloc cl_kernel.\n");
 		return CL_OUT_OF_HOST_MEMORY;
 	}
 

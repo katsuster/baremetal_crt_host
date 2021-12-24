@@ -20,7 +20,7 @@ cl_int prg_alloc(cl_context ctx, cl_program *prg)
 
 	t = calloc(1, sizeof(struct _cl_program));
 	if (t == NULL) {
-		fprintf(stderr, "prg_alloc: cannot calloc memory\n");
+		log_err("cannot calloc cl_program.\n");
 		return CL_OUT_OF_HOST_MEMORY;
 	}
 

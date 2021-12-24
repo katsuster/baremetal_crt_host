@@ -21,7 +21,7 @@ cl_int mem_alloc(cl_context ctx, cl_mem *mem)
 
 	t = calloc(1, sizeof(struct _cl_mem));
 	if (t == NULL) {
-		fprintf(stderr, "mem_alloc: cannot calloc memory\n");
+		log_err("cannot calloc cl_mem.\n");
 		return CL_OUT_OF_HOST_MEMORY;
 	}
 
