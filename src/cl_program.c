@@ -25,7 +25,7 @@ cl_program in_clCreateProgramWithBinary(cl_context          context,
 					cl_int              *binary_status,
 					cl_int              *errcode_ret)
 {
-	cl_program t;
+	cl_program t = NULL;
 	cl_int r;
 
 	if (lengths == NULL || binaries == NULL) {
@@ -59,8 +59,17 @@ cl_program in_clCreateProgramWithBinary(cl_context          context,
 		goto err_out;
 	}
 
+	r = prg_elf_load(t, binaries[0], lengths[0]);
+	if (r != CL_SUCCESS) {
+		goto err_out;
+	}
+
 	return t;
 err_out:
+	if (t != NULL) {
+		prg_free(t);
+	}
+
 	if (errcode_ret != NULL) {
 		*errcode_ret = r;
 	}
@@ -75,10 +84,16 @@ cl_int in_clRetainProgram(cl_program program)
 
 cl_int in_clReleaseProgram(cl_program program)
 {
-	cl_int r;
+	cl_int res = CL_SUCCESS, r;
 
 	if ((r = prg_is_valid(program)) != CL_SUCCESS) {
 		return r;
+	}
+
+	r = prg_elf_unload(program);
+	if (r != CL_SUCCESS) {
+		// Continue anyway
+		res = r;
 	}
 
 	r = prg_free(program);
@@ -86,7 +101,7 @@ cl_int in_clReleaseProgram(cl_program program)
 		return r;
 	}
 
-	return CL_SUCCESS;
+	return res;
 }
 
 cl_int in_clBuildProgram(cl_program         program,
