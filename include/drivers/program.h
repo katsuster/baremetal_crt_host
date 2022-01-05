@@ -10,6 +10,14 @@ struct _cl_program {
 	cl_int magic;
 	cl_int id;
 	cl_context ctx;
+
+	void *priv;
+};
+
+struct program_chunk {
+	cl_int index;
+	void *buf;
+	cl_uint size;
 };
 
 static inline cl_int prg_is_valid(const cl_program program)
@@ -27,5 +35,9 @@ static inline cl_int prg_is_valid(const cl_program program)
 
 cl_int prg_alloc(cl_context ctx, cl_program *prg);
 cl_int prg_free(cl_program prg);
+
+/* binary: ELF */
+cl_int prg_elf_load(cl_program prg, const unsigned char *buf, size_t len);
+cl_int prg_elf_unload(cl_program prg);
 
 #endif /* BAREMETAL_CRT_HOST_DRV_PROGRAM */

@@ -6,6 +6,7 @@ prj_sources(
   context.c
   command_queue.c
   program.c
+  program_elf.c
   kernel.c
   mem.c
   )
