@@ -5,6 +5,15 @@
 
 #include <type_cl.h>
 
+struct gdb_remote_priv {
+	/* Settings */
+	const char *node;
+	const char *service;
+
+	/* For runtime */
+	int fd_sock;
+};
+
 cl_int gdb_remote_init(cl_platform_id platform);
 cl_int gdb_remote_exit(cl_platform_id platform);
 
