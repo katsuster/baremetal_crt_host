@@ -34,6 +34,8 @@ struct prg_header {
 struct elf_info {
 	cl_int magic;
 
+	cl_program prg;
+
 	size_t elf_size;
 	const uint8_t *buf;
 	const uint8_t *p_hdr_ent;
@@ -86,6 +88,7 @@ static cl_int prg_elf_init(cl_program prg)
 	}
 
 	elf->magic = OPENCL_ICD_MAGIC;
+	elf->prg = prg;
 	elf->buf = NULL;
 	elf->prgs = NULL;
 
@@ -346,12 +349,26 @@ static cl_int prg_elf_read_prg(struct elf_info *elf)
 		return r;
 	}
 
+	r = prg_set_num_chunks(elf->prg, elf->e_phnum);
+	if (r != CL_SUCCESS) {
+		return r;
+	}
+
 	for (uint32_t i = 0; i < elf->e_phnum; i++) {
 		struct prg_header *prg = &elf->prgs[i];
+		struct program_chunk chunk;
 		const uint8_t *src = elf->buf + prg->p_offset;
 
 		prg->index = i;
 		prg->src = src;
+
+		chunk.paddr = prg->p_paddr;
+		chunk.buf = src;
+		chunk.size = prg->p_filesz;
+		r = prg_set_chunk(elf->prg, i, &chunk);
+		if (r != CL_SUCCESS) {
+			return r;
+		}
 	}
 
 	return CL_SUCCESS;
