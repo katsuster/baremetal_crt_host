@@ -47,3 +47,12 @@ cl_int cmdq_free(cl_command_queue cmdq)
 
 	return CL_SUCCESS;
 }
+
+cl_context cmdq_get_context(cl_command_queue cmdq)
+{
+	if (cmdq_is_valid(cmdq) != CL_SUCCESS) {
+		return NULL;
+	}
+
+	return cmdq->ctx;
+}

@@ -28,4 +28,6 @@ static inline cl_int ctx_is_valid(const cl_context ctx)
 cl_int ctx_alloc(cl_device_id dev, cl_context *ctx);
 cl_int ctx_free(cl_context ctx);
 
+cl_device_id ctx_get_device(cl_context ctx);
+
 #endif /* BAREMETAL_CRT_HOST_DRV_CONTEXT */

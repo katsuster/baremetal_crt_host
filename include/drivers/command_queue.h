@@ -28,5 +28,6 @@ static inline cl_int cmdq_is_valid(const cl_command_queue cmdq)
 cl_int cmdq_alloc(cl_context ctx, cl_command_queue *cmdq);
 cl_int cmdq_free(cl_command_queue cmdq);
 
+cl_context cmdq_get_context(cl_command_queue cmdq);
 
 #endif /* BAREMETAL_CRT_HOST_DRV_COMMAND_QUEUE */

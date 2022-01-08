@@ -46,3 +46,12 @@ cl_int ctx_free(cl_context ctx)
 
 	return CL_SUCCESS;
 }
+
+cl_device_id ctx_get_device(cl_context ctx)
+{
+	if (ctx_is_valid(ctx) != CL_SUCCESS) {
+		return NULL;
+	}
+
+	return ctx->dev;
+}

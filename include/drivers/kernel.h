@@ -28,4 +28,6 @@ static inline cl_int kern_is_valid(const cl_kernel kern)
 cl_int kern_alloc(cl_program prg, cl_kernel *kern);
 cl_int kern_free(cl_kernel kern);
 
+cl_program kern_get_program(cl_kernel kern);
+
 #endif /* BAREMETAL_CRT_HOST_DRV_KERNEL */

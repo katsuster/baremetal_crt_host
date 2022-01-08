@@ -47,3 +47,12 @@ cl_int kern_free(cl_kernel kern)
 
 	return CL_SUCCESS;
 }
+
+cl_program kern_get_program(cl_kernel kern)
+{
+	if (kern_is_valid(kern) != CL_SUCCESS) {
+		return NULL;
+	}
+
+	return kern->prg;
+}
