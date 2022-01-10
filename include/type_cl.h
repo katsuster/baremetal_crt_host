@@ -7,6 +7,8 @@
 #include <drivers/platform.h>
 #include <drivers/device.h>
 
+#define NMAX(a, b)     (((a) > (b)) ? (a) : (b))
+#define NMIN(a, b)     (((a) < (b)) ? (a) : (b))
 #define ARRAY_OF(x)    (sizeof(x) / sizeof((x)[0]))
 
 #define LOG_HEADER    "%s:%d: "
