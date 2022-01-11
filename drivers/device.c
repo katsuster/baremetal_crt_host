@@ -177,6 +177,48 @@ cl_int dev_remove(cl_device_id dev)
 	return CL_SUCCESS;
 }
 
+cl_int dev_reset(cl_device_id dev)
+{
+	cl_int r;
+
+	if ((r = dev_is_valid(dev)) != CL_SUCCESS) {
+		return r;
+	}
+	if (dev->ops == NULL || dev->ops->reset == NULL) {
+		return CL_INVALID_DEVICE;
+	}
+
+	return dev->ops->reset(dev);
+}
+
+cl_int dev_read_mem(cl_device_id dev, uint64_t paddr, char *buf, uint64_t len)
+{
+	cl_int r;
+
+	if ((r = dev_is_valid(dev)) != CL_SUCCESS) {
+		return r;
+	}
+	if (dev->ops == NULL || dev->ops->read_mem == NULL) {
+		return CL_INVALID_DEVICE;
+	}
+
+	return dev->ops->read_mem(dev, paddr, buf, len);
+}
+
+cl_int dev_write_mem(cl_device_id dev, uint64_t paddr, const char *buf, uint64_t len)
+{
+	cl_int r;
+
+	if ((r = dev_is_valid(dev)) != CL_SUCCESS) {
+		return r;
+	}
+	if (dev->ops == NULL || dev->ops->write_mem == NULL) {
+		return CL_INVALID_DEVICE;
+	}
+
+	return dev->ops->write_mem(dev, paddr, buf, len);
+}
+
 cl_int dev_init(cl_platform_id platform)
 {
 	cl_int r, res = CL_SUCCESS;
