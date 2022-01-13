@@ -18,9 +18,10 @@ static cl_uint in_devs_num;
 static int gdb_remote_getchar(struct gdb_remote_priv *prv)
 {
 	unsigned char ch;
+	ssize_t nrecv;
 
 retry:
-	ssize_t nrecv = recv(prv->fd_sock, &ch, sizeof(ch), 0);
+	nrecv = recv(prv->fd_sock, &ch, sizeof(ch), 0);
 	if (nrecv == -1) {
 		if (errno == EINTR) {
 			// Need to retry
@@ -38,9 +39,10 @@ retry:
 static int gdb_remote_putchar(struct gdb_remote_priv *prv, int c)
 {
 	unsigned char ch = c;
+	ssize_t nsent;
 
 retry:
-	ssize_t nsent = send(prv->fd_sock, &ch, sizeof(ch), 0);
+	nsent = send(prv->fd_sock, &ch, sizeof(ch), 0);
 	if (nsent == -1) {
 		if (errno == EINTR) {
 			// Need to retry
@@ -60,6 +62,8 @@ static cl_int gdb_remote_send(struct gdb_remote_priv *prv, const char *cmd, int 
 	size_t cmdlen = strlen(cmd);
 	size_t buflen = cmdlen + 10;
 	char *buf = alloca(buflen);
+	ssize_t nsent;
+
 	memset(buf, 0, buflen);
 
 	char sum = 0;
@@ -76,7 +80,7 @@ static cl_int gdb_remote_send(struct gdb_remote_priv *prv, const char *cmd, int 
 	log_dbg("-> %s\n", buf);
 
 resend:
-	ssize_t nsent = send(prv->fd_sock, buf, len, 0);
+	nsent = send(prv->fd_sock, buf, len, 0);
 	if (nsent != len) {
 		log_err("failed to send data.\n");
 		return CL_OUT_OF_RESOURCES;
