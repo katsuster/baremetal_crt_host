@@ -5,7 +5,11 @@
 
 #include <in_cl.h>
 #include <drivers/command_queue.h>
+#include <drivers/context.h>
+#include <drivers/device.h>
+#include <drivers/kernel.h>
 #include <drivers/mem.h>
+#include <drivers/program.h>
 
 cl_int in_clFlush(cl_command_queue command_queue)
 {
@@ -167,6 +171,36 @@ cl_int in_clEnqueueNDRangeKernel(cl_command_queue command_queue,
 				 const cl_event   *event_wait_list,
 				 cl_event         *event)
 {
+	cl_context ctx = cmdq_get_context(command_queue);
+	cl_device_id dev = ctx_get_device(ctx);
+	cl_program prg = kern_get_program(kernel);
+	int num_chunks;
+	cl_int r;
+
+	r = prg_get_num_chunks(prg, &num_chunks);
+	if (r != CL_SUCCESS) {
+		return r;
+	}
+
+	for (int i = 0; i < num_chunks; i++) {
+		struct program_chunk chunk;
+
+		r = prg_get_chunk(prg, i, &chunk);
+		if (r != CL_SUCCESS) {
+			return r;
+		}
+
+		r = dev_write_mem(dev, chunk.paddr, chunk.buf, chunk.size);
+		if (r != CL_SUCCESS) {
+			return r;
+		}
+	}
+
+	r = dev_reset(dev);
+	if (r != CL_SUCCESS) {
+		return r;
+	}
+
 	return CL_SUCCESS;
 }
 
