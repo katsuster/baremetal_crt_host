@@ -53,8 +53,10 @@ cl_int dev_get_devices(cl_device_id *pdev, cl_device_type typ, cl_uint *sz)
 			continue;
 		}
 
-		if (pdev != NULL && dev->enabled) {
-			pdev[cnt] = dev;
+		if (dev->enabled) {
+			if (pdev != NULL) {
+				pdev[cnt] = dev;
+			}
 			cnt++;
 		}
 		if (pdev != NULL && cnt >= *sz) {
