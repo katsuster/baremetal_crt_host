@@ -53,10 +53,10 @@ cl_int dev_get_devices(cl_device_id *pdev, cl_device_type typ, cl_uint *sz)
 			continue;
 		}
 
-		if (pdev != NULL) {
+		if (pdev != NULL && dev->enabled) {
 			pdev[cnt] = dev;
+			cnt++;
 		}
-		cnt++;
 		if (pdev != NULL && cnt >= *sz) {
 			break;
 		}
@@ -129,10 +129,12 @@ cl_int dev_add(cl_device_id dev)
 		}
 	}
 
+	dev->enabled = 1;
+
 	if (dev->ops != NULL && dev->ops->probe != NULL) {
 		r = dev->ops->probe(dev);
 		if (r != CL_SUCCESS) {
-			return r;
+			dev->enabled = 0;
 		}
 	}
 
@@ -145,7 +147,7 @@ cl_int dev_add(cl_device_id dev)
 cl_int dev_remove(cl_device_id dev)
 {
 	cl_device_id d = &in_head;
-	cl_int r;
+	cl_int r, res = CL_SUCCESS;
 	int found = 0;
 
 	if ((r = dev_is_valid(dev)) != CL_SUCCESS) {
@@ -167,14 +169,16 @@ cl_int dev_remove(cl_device_id dev)
 	if (dev->ops != NULL && dev->ops->remove != NULL) {
 		r = dev->ops->remove(dev);
 		if (r != CL_SUCCESS) {
-			return r;
+			res = r;
 		}
 	}
+
+	dev->enabled = 0;
 
 	d->dev_next = dev->dev_next;
 	atomic_fetch_add_explicit(&in_dev_num, -1, memory_order_relaxed);
 
-	return CL_SUCCESS;
+	return res;
 }
 
 cl_int dev_reset(cl_device_id dev)

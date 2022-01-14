@@ -23,6 +23,7 @@ struct _cl_device_id {
 
 	const struct dev_ops *ops;
 	cl_device_type dev_type;
+	int enabled;
 
 	void *priv;
 
