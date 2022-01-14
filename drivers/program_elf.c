@@ -255,7 +255,7 @@ static cl_int prg_elf_read_elf(struct elf_info *elf)
 	if (r != CL_SUCCESS) {
 		return r;
 	}
-	
+
 	if (elf->e_phentsize < sizeof(Elf64_Phdr)) {
 		log_err("not support program header size %" PRId32 "\n",
 			elf->e_phentsize);
@@ -437,7 +437,7 @@ cl_int prg_elf_load(cl_program prg, const uint8_t *buf, size_t len)
 		return r;
 	}
 	prg_elf_dump_elf(elf);
-	
+
 	r = prg_elf_is_valid_header(elf);
 	if (r != CL_SUCCESS) {
 		return r;
