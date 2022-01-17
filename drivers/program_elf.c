@@ -57,7 +57,7 @@ struct elf_info {
 	uint32_t e_shstrndx;
 
 	// Program headers (len: e_phnum)
-	struct prg_header *prgs;
+	struct prg_header *phs;
 };
 
 static inline cl_int prg_elf_is_valid(const cl_program prg)
@@ -90,7 +90,7 @@ static cl_int prg_elf_init(cl_program prg)
 	elf->magic = OPENCL_ICD_MAGIC;
 	elf->prg = prg;
 	elf->buf = NULL;
-	elf->prgs = NULL;
+	elf->phs = NULL;
 
 	prg->priv = elf;
 
@@ -103,9 +103,9 @@ static cl_int prg_elf_fini(cl_program prg)
 
 	prg->priv = NULL;
 
-	if (elf->prgs != NULL) {
-		free(elf->prgs);
-		elf->prgs = NULL;
+	if (elf->phs != NULL) {
+		free(elf->phs);
+		elf->phs = NULL;
 	}
 
 	elf->buf = NULL;
@@ -276,70 +276,60 @@ static void prg_elf_dump_elf(const struct elf_info *elf)
 	log_dbg("  program addr   : %p\n", elf->p_hdr_ent);
 }
 
-static cl_int prg_elf_read_prg32(struct elf_info *elf)
+static cl_int prg_elf_read_ph32(struct elf_info *elf)
 {
-	struct prg_header *prgs = NULL;
-
-	prgs = calloc(elf->e_phnum, sizeof(struct prg_header));
-	if (prgs == NULL) {
-		log_err("failed to calloc prg_header.\n");
-		return CL_OUT_OF_HOST_MEMORY;
-	}
-	elf->prgs = prgs;
-
 	for (uint32_t i = 0; i < elf->e_phnum; i++) {
 		const Elf32_Phdr *p_hdr = (const Elf32_Phdr *)(elf->p_hdr_ent + i * elf->e_phentsize);
 
-		prgs[i].p_type   = p_hdr->p_type;
-		prgs[i].p_flags  = p_hdr->p_flags;
-		prgs[i].p_offset = p_hdr->p_offset;
-		prgs[i].p_vaddr  = p_hdr->p_vaddr;
-		prgs[i].p_paddr  = p_hdr->p_paddr;
-		prgs[i].p_filesz = p_hdr->p_filesz;
-		prgs[i].p_memsz  = p_hdr->p_memsz;
-		prgs[i].p_align  = p_hdr->p_align;
+		elf->phs[i].p_type   = p_hdr->p_type;
+		elf->phs[i].p_flags  = p_hdr->p_flags;
+		elf->phs[i].p_offset = p_hdr->p_offset;
+		elf->phs[i].p_vaddr  = p_hdr->p_vaddr;
+		elf->phs[i].p_paddr  = p_hdr->p_paddr;
+		elf->phs[i].p_filesz = p_hdr->p_filesz;
+		elf->phs[i].p_memsz  = p_hdr->p_memsz;
+		elf->phs[i].p_align  = p_hdr->p_align;
 	}
 
 	return CL_SUCCESS;
 }
 
-static cl_int prg_elf_read_prg64(struct elf_info *elf)
+static cl_int prg_elf_read_ph64(struct elf_info *elf)
 {
-	struct prg_header *prgs = NULL;
-
-	prgs = calloc(elf->e_phnum, sizeof(struct prg_header));
-	if (prgs == NULL) {
-		log_err("failed to calloc prg_chunk.\n");
-		return CL_OUT_OF_HOST_MEMORY;
-	}
-	elf->prgs = prgs;
-
 	for (uint32_t i = 0; i < elf->e_phnum; i++) {
 		const Elf64_Phdr *p_hdr = (const Elf64_Phdr *)(elf->p_hdr_ent + i * elf->e_phentsize);
 
-		prgs[i].p_type   = p_hdr->p_type;
-		prgs[i].p_flags  = p_hdr->p_flags;
-		prgs[i].p_offset = p_hdr->p_offset;
-		prgs[i].p_vaddr  = p_hdr->p_vaddr;
-		prgs[i].p_paddr  = p_hdr->p_paddr;
-		prgs[i].p_filesz = p_hdr->p_filesz;
-		prgs[i].p_memsz  = p_hdr->p_memsz;
-		prgs[i].p_align  = p_hdr->p_align;
+		elf->phs[i].p_type   = p_hdr->p_type;
+		elf->phs[i].p_flags  = p_hdr->p_flags;
+		elf->phs[i].p_offset = p_hdr->p_offset;
+		elf->phs[i].p_vaddr  = p_hdr->p_vaddr;
+		elf->phs[i].p_paddr  = p_hdr->p_paddr;
+		elf->phs[i].p_filesz = p_hdr->p_filesz;
+		elf->phs[i].p_memsz  = p_hdr->p_memsz;
+		elf->phs[i].p_align  = p_hdr->p_align;
 	}
 
 	return CL_SUCCESS;
 }
 
-static cl_int prg_elf_read_prg(struct elf_info *elf)
+static cl_int prg_elf_read_ph(struct elf_info *elf)
 {
+	struct prg_header *phs = NULL;
 	cl_int r;
+
+	phs = calloc(elf->e_phnum, sizeof(struct prg_header));
+	if (phs == NULL) {
+		log_err("failed to calloc prg_header.\n");
+		return CL_OUT_OF_HOST_MEMORY;
+	}
+	elf->phs = phs;
 
 	switch (elf->elf_class) {
 	case 32:
-		r = prg_elf_read_prg32(elf);
+		r = prg_elf_read_ph32(elf);
 		break;
 	case 64:
-		r = prg_elf_read_prg64(elf);
+		r = prg_elf_read_ph64(elf);
 		break;
 	default:
 		log_err("architecture class is not 32 nor 64\n");
@@ -355,7 +345,7 @@ static cl_int prg_elf_read_prg(struct elf_info *elf)
 	}
 
 	for (uint32_t i = 0; i < elf->e_phnum; i++) {
-		struct prg_header *prg = &elf->prgs[i];
+		struct prg_header *prg = &elf->phs[i];
 		struct program_chunk chunk;
 		const uint8_t *src = elf->buf + prg->p_offset;
 
@@ -374,10 +364,10 @@ static cl_int prg_elf_read_prg(struct elf_info *elf)
 	return CL_SUCCESS;
 }
 
-static void prg_elf_dump_prg(const struct elf_info *elf)
+static void prg_elf_dump_ph(const struct elf_info *elf)
 {
 	for (uint32_t i = 0; i < elf->e_phnum; i++) {
-		const struct prg_header *prg = &elf->prgs[i];
+		const struct prg_header *prg = &elf->phs[i];
 
 		log_dbg("  ph: %d, p_hdr: %p, offset: 0x%x\n",
 			i, elf->p_hdr_ent + i * elf->e_phentsize, i * elf->e_phentsize);
@@ -443,11 +433,11 @@ cl_int prg_elf_load(cl_program prg, const uint8_t *buf, size_t len)
 		return r;
 	}
 
-	r = prg_elf_read_prg(elf);
+	r = prg_elf_read_ph(elf);
 	if (r != CL_SUCCESS) {
 		return r;
 	}
-	prg_elf_dump_prg(elf);
+	prg_elf_dump_ph(elf);
 
 	return CL_SUCCESS;
 }
