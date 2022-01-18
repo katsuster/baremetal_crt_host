@@ -6,6 +6,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -31,6 +32,20 @@ struct prg_header {
 	const uint8_t *src;
 };
 
+struct sec_header {
+	// Section header
+	uint32_t sh_name;
+	uint32_t sh_type;
+	uint64_t sh_flags;
+	uint64_t sh_addr;
+	uint64_t sh_offset;
+	uint64_t sh_size;
+	uint32_t sh_link;
+	uint32_t sh_info;
+	uint64_t sh_addralign;
+	uint64_t sh_entsize;
+};
+
 struct elf_info {
 	cl_int magic;
 
@@ -39,6 +54,10 @@ struct elf_info {
 	size_t elf_size;
 	const uint8_t *buf;
 	const uint8_t *p_hdr_ent;
+	const uint8_t *s_hdr_ent;
+	// Section header strings
+	const char *shstr_ent;
+	size_t shstr_size;
 
 	// ELF header
 	uint32_t elf_class;
@@ -58,6 +77,11 @@ struct elf_info {
 
 	// Program headers (len: e_phnum)
 	struct prg_header *phs;
+	// Section headers (len: e_shnum)
+	struct sec_header *shs;
+
+	// Communication area
+	const struct comm_section *comm;
 };
 
 static inline cl_int prg_elf_is_valid(const cl_program prg)
@@ -91,6 +115,7 @@ static cl_int prg_elf_init(cl_program prg)
 	elf->prg = prg;
 	elf->buf = NULL;
 	elf->phs = NULL;
+	elf->shs = NULL;
 
 	prg->priv = elf;
 
@@ -102,6 +127,11 @@ static cl_int prg_elf_fini(cl_program prg)
 	struct elf_info *elf = prg->priv;
 
 	prg->priv = NULL;
+
+	if (elf->shs != NULL) {
+		free(elf->shs);
+		elf->shs = NULL;
+	}
 
 	if (elf->phs != NULL) {
 		free(elf->phs);
@@ -175,6 +205,11 @@ static cl_int prg_elf_is_valid_header(struct elf_info *elf)
 		return CL_INVALID_BINARY;
 	}
 
+	if (elf->elf_size < (elf->e_shoff + (elf->e_shnum * elf->e_shentsize))) {
+		log_err("[elf] section header exceeds file size\n");
+		return CL_INVALID_BINARY;
+	}
+
 	if (elf->e_shentsize == 0) {
 		log_err("[elf] invalid section header\n");
 		return CL_INVALID_BINARY;
@@ -182,6 +217,11 @@ static cl_int prg_elf_is_valid_header(struct elf_info *elf)
 
 	if (elf->elf_size < (elf->e_shoff + (elf->e_shnum * elf->e_shentsize))) {
 		log_err("[elf] section header exceeds file size\n");
+		return CL_INVALID_BINARY;
+	}
+
+	if (elf->e_shstrndx >= elf->e_shnum) {
+		log_err("[elf] section header string exceeds number of headers\n");
 		return CL_INVALID_BINARY;
 	}
 
@@ -213,6 +253,18 @@ static cl_int prg_elf_read_elf32(struct elf_info *elf)
 	elf->e_shnum     = elf_hdr->e_shnum;
 	elf->e_shstrndx  = elf_hdr->e_shstrndx;
 
+	if (elf->e_phentsize < sizeof(Elf32_Phdr)) {
+		log_err("not support program header size %" PRId32 "\n",
+			elf->e_phentsize);
+		return CL_INVALID_BINARY;
+	}
+
+	if (elf->e_shentsize < sizeof(Elf32_Shdr)) {
+		log_err("not support section header size %" PRId32 "\n",
+			elf->e_shentsize);
+		return CL_INVALID_BINARY;
+	}
+
 	return CL_SUCCESS;
 }
 
@@ -233,6 +285,18 @@ static cl_int prg_elf_read_elf64(struct elf_info *elf)
 	elf->e_shentsize = elf_hdr->e_shentsize;
 	elf->e_shnum     = elf_hdr->e_shnum;
 	elf->e_shstrndx  = elf_hdr->e_shstrndx;
+
+	if (elf->e_phentsize < sizeof(Elf64_Phdr)) {
+		log_err("not support program header size %" PRId32 "\n",
+			elf->e_phentsize);
+		return CL_INVALID_BINARY;
+	}
+
+	if (elf->e_shentsize < sizeof(Elf64_Shdr)) {
+		log_err("not support section header size %" PRId32 "\n",
+			elf->e_shentsize);
+		return CL_INVALID_BINARY;
+	}
 
 	return CL_SUCCESS;
 }
@@ -256,13 +320,8 @@ static cl_int prg_elf_read_elf(struct elf_info *elf)
 		return r;
 	}
 
-	if (elf->e_phentsize < sizeof(Elf64_Phdr)) {
-		log_err("not support program header size %" PRId32 "\n",
-			elf->e_phentsize);
-		return CL_INVALID_BINARY;
-	}
-
 	elf->p_hdr_ent = elf->buf + elf->e_phoff;
+	elf->s_hdr_ent = elf->buf + elf->e_shoff;
 
 	return CL_SUCCESS;
 }
@@ -394,6 +453,190 @@ static void prg_elf_dump_ph(const struct elf_info *elf)
 	}
 }
 
+static cl_int prg_elf_read_shs32(struct elf_info *elf)
+{
+	for (uint32_t i = 0; i < elf->e_shnum; i++) {
+		const Elf32_Shdr *s_hdr = (const Elf32_Shdr *)(elf->s_hdr_ent + i * elf->e_shentsize);
+		elf->shs[i].sh_name      = s_hdr->sh_name;
+		elf->shs[i].sh_type      = s_hdr->sh_type;
+		elf->shs[i].sh_flags     = s_hdr->sh_flags;
+		elf->shs[i].sh_addr      = s_hdr->sh_addr;
+		elf->shs[i].sh_offset    = s_hdr->sh_offset;
+		elf->shs[i].sh_size      = s_hdr->sh_size;
+		elf->shs[i].sh_link      = s_hdr->sh_link;
+		elf->shs[i].sh_info      = s_hdr->sh_info;
+		elf->shs[i].sh_addralign = s_hdr->sh_addralign;
+		elf->shs[i].sh_entsize   = s_hdr->sh_entsize;
+	}
+
+	return CL_SUCCESS;
+}
+
+static cl_int prg_elf_read_shs64(struct elf_info *elf)
+{
+	for (uint32_t i = 0; i < elf->e_shnum; i++) {
+		const Elf64_Shdr *s_hdr = (const Elf64_Shdr *)(elf->s_hdr_ent + i * elf->e_shentsize);
+		elf->shs[i].sh_name      = s_hdr->sh_name;
+		elf->shs[i].sh_type      = s_hdr->sh_type;
+		elf->shs[i].sh_flags     = s_hdr->sh_flags;
+		elf->shs[i].sh_addr      = s_hdr->sh_addr;
+		elf->shs[i].sh_offset    = s_hdr->sh_offset;
+		elf->shs[i].sh_size      = s_hdr->sh_size;
+		elf->shs[i].sh_link      = s_hdr->sh_link;
+		elf->shs[i].sh_info      = s_hdr->sh_info;
+		elf->shs[i].sh_addralign = s_hdr->sh_addralign;
+		elf->shs[i].sh_entsize   = s_hdr->sh_entsize;
+	}
+
+	return CL_SUCCESS;
+}
+
+static const char *get_sh_name(const struct elf_info *elf, uint32_t off)
+{
+	if (elf->shstr_size <= off) {
+		return "(unknown)";
+	}
+
+	return elf->shstr_ent + off;
+}
+
+static cl_int prg_elf_read_shs(struct elf_info *elf)
+{
+	struct sec_header *shs = NULL;
+	cl_int r;
+
+	shs = calloc(elf->e_shnum, sizeof(struct sec_header));
+	if (shs == NULL) {
+		log_err("failed to calloc sec_header.\n");
+		return CL_OUT_OF_HOST_MEMORY;
+	}
+	elf->shs = shs;
+
+	switch (elf->elf_class) {
+	case 32:
+		r = prg_elf_read_shs32(elf);
+		break;
+	case 64:
+		r = prg_elf_read_shs64(elf);
+		break;
+	default:
+		log_err("architecture class is not 32 nor 64\n");
+		return CL_INVALID_BINARY;
+	}
+	if (r != CL_SUCCESS) {
+		return r;
+	}
+
+	struct sec_header *shstr = &elf->shs[elf->e_shstrndx];
+	elf->shstr_ent = (const char *)elf->buf + shstr->sh_offset;
+	elf->shstr_size = shstr->sh_size;
+
+	int found_comm = 0;
+
+	for (uint32_t i = 0; i < elf->e_shnum; i++) {
+		struct sec_header *sec = &elf->shs[i];
+		const char *sec_name = get_sh_name(elf, sec->sh_name);
+
+		if (strcmp(sec_name, BAREMETAL_CRT_COMM_SECTION) == 0) {
+			const uint8_t *ent_comm = elf->buf + sec->sh_offset;
+
+			elf->comm = (const struct comm_section *)ent_comm;
+
+			found_comm = 1;
+		}
+
+	}
+	if (!found_comm) {
+		log_err("not found communication section '%s'\n", BAREMETAL_CRT_COMM_SECTION);
+		return CL_INVALID_BINARY;
+	}
+
+	r = prg_set_comm_section(elf->prg, elf->comm);
+	if (r != CL_SUCCESS) {
+		return r;
+	}
+
+	return CL_SUCCESS;
+}
+
+static const char *get_sh_type_name(uint32_t t)
+{
+	const char *name = "(unknown)";
+
+	switch (t) {
+	case SHT_NULL:
+		name = "SHT_NULL";
+		break;
+	case SHT_PROGBITS:
+		name = "SHT_PROGBITS";
+		break;
+	case SHT_SYMTAB:
+		name = "SHT_SYMTAB";
+		break;
+	case SHT_STRTAB:
+		name = "SHT_STRTAB";
+		break;
+	case SHT_RELA:
+		name = "SHT_RELA";
+		break;
+	case SHT_HASH:
+		name = "SHT_HASH";
+		break;
+	case SHT_DYNAMIC:
+		name = "SHT_DYNAMIC";
+		break;
+	case SHT_NOTE:
+		name = "SHT_NOTE";
+		break;
+	case SHT_NOBITS:
+		name = "SHT_NOBITS";
+		break;
+	case SHT_REL:
+		name = "SHT_REL";
+		break;
+	case SHT_SHLIB:
+		name = "SHT_SHLIB";
+		break;
+	case SHT_DYNSYM:
+		name = "SHT_DYNSYM";
+		break;
+	}
+
+	return name;
+}
+
+static void prg_elf_dump_shs(const struct elf_info *elf)
+{
+	for (uint32_t i = 0; i < elf->e_shnum; i++) {
+		const struct sec_header *sec = &elf->shs[i];
+
+		log_dbg("  sh: %d, s_hdr: %p, offset: 0x%x\n",
+			i, elf->s_hdr_ent + i * elf->e_shentsize, i * elf->e_shentsize);
+		log_dbg("    sh name     : '%s' (0x%" PRIx32 ")\n",
+			get_sh_name(elf, sec->sh_name), sec->sh_name);
+		log_dbg("    sh type     : %s (0x%" PRIx32 ")\n",
+			get_sh_type_name(sec->sh_type), sec->sh_type);
+		log_dbg("    sh flags    : %s%s%s (0x%04" PRIx64 ")\n",
+			(sec->sh_flags & SHF_WRITE)     ? "W" : "-",
+			(sec->sh_flags & SHF_ALLOC)     ? "A" : "-",
+			(sec->sh_flags & SHF_EXECINSTR) ? "X" : "-",
+			sec->sh_flags);
+		log_dbg("    sh addr     : 0x%" PRIx64 "\n", sec->sh_addr);
+		log_dbg("    sh offset   : 0x%" PRIx64 "\n", sec->sh_offset);
+		log_dbg("    sh size     : 0x%" PRIx64 "\n", sec->sh_size);
+		log_dbg("    sh link     : 0x%" PRIx32 "\n", sec->sh_link);
+		log_dbg("    sh info     : 0x%" PRIx32 "\n", sec->sh_info);
+		log_dbg("    sh addralign: 0x%" PRIx64 "\n", sec->sh_addralign);
+		log_dbg("    sh entsize  : 0x%" PRIx64 "\n", sec->sh_entsize);
+	}
+
+	log_dbg("  comm: hdr:%p\n", elf->comm);
+	log_dbg("    magic     : 0x%" PRIx32 "\n", elf->comm->magic);
+	log_dbg("    base_addr : 0x%" PRIx64 "\n", elf->comm->base_addr);
+	log_dbg("    phys_addr : 0x%" PRIx64 "\n", elf->comm->phys_addr);
+	log_dbg("    size      : 0x%" PRIx64 "\n", elf->comm->size);
+}
+
 cl_int prg_elf_load(cl_program prg, const uint8_t *buf, size_t len)
 {
 	int arch;
@@ -438,6 +681,12 @@ cl_int prg_elf_load(cl_program prg, const uint8_t *buf, size_t len)
 		return r;
 	}
 	prg_elf_dump_ph(elf);
+
+	r = prg_elf_read_shs(elf);
+	if (r != CL_SUCCESS) {
+		return r;
+	}
+	prg_elf_dump_shs(elf);
 
 	return CL_SUCCESS;
 }

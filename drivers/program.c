@@ -120,3 +120,34 @@ cl_int prg_set_chunk(cl_program prg, int i, const struct program_chunk *chunk)
 
 	return CL_SUCCESS;
 }
+
+cl_int prg_get_comm_section(cl_program prg, struct comm_section *comm)
+{
+	cl_int r;
+
+	if ((r = prg_is_valid(prg)) != CL_SUCCESS) {
+		return r;
+	}
+
+	if (comm != NULL) {
+		*comm = prg->comm;
+	}
+
+	return CL_SUCCESS;
+}
+
+cl_int prg_set_comm_section(cl_program prg, const struct comm_section *comm)
+{
+	cl_int r;
+
+	if ((r = prg_is_valid(prg)) != CL_SUCCESS) {
+		return r;
+	}
+	if (comm == NULL) {
+		return CL_INVALID_VALUE;
+	}
+
+	prg->comm = *comm;
+
+	return CL_SUCCESS;
+}

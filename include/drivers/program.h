@@ -4,6 +4,14 @@
 #define BAREMETAL_CRT_HOST_DRV_PROGRAM
 
 #include <config_cl.h>
+#include <drivers/comm.h>
+
+struct program_chunk {
+	int index;
+	uint64_t paddr;
+	const void *buf;
+	cl_uint size;
+};
 
 struct _cl_program {
 	struct _cl_icd_dispatch *dispatch;
@@ -13,15 +21,18 @@ struct _cl_program {
 
 	void *priv;
 
+	/* Number of text/data areas of program */
 	int num_chunks;
-	struct program_chunk *chunks;
-};
 
-struct program_chunk {
-	int index;
-	uint64_t paddr;
-	const void *buf;
-	cl_uint size;
+	/* Array of text/data area of program */
+	struct program_chunk *chunks;
+
+	/*
+	 * Communication area for device side to pass various data:
+	 *   - arguments (device <- host)
+	 *   - results (host <- device)
+	 */
+	struct comm_section comm;
 };
 
 static inline cl_int prg_is_valid(const cl_program program)
@@ -44,6 +55,9 @@ cl_int prg_get_num_chunks(cl_program prg, int *num);
 cl_int prg_set_num_chunks(cl_program prg, int num);
 cl_int prg_get_chunk(cl_program prg, int i, struct program_chunk *chunk);
 cl_int prg_set_chunk(cl_program prg, int i, const struct program_chunk *chunk);
+
+cl_int prg_get_comm_section(cl_program prg, struct comm_section *comm);
+cl_int prg_set_comm_section(cl_program prg, const struct comm_section *comm);
 
 /* binary: ELF */
 cl_int prg_elf_load(cl_program prg, const unsigned char *buf, size_t len);
