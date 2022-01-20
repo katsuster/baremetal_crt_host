@@ -174,9 +174,11 @@ cl_int in_clEnqueueNDRangeKernel(cl_command_queue command_queue,
 	cl_context ctx = cmdq_get_context(command_queue);
 	cl_device_id dev = ctx_get_device(ctx);
 	cl_program prg = kern_get_program(kernel);
+	struct comm_section comm;
 	int num_chunks;
 	cl_int r;
 
+	/* Send text/data areas */
 	r = prg_get_num_chunks(prg, &num_chunks);
 	if (r != CL_SUCCESS) {
 		return r;
@@ -196,6 +198,69 @@ cl_int in_clEnqueueNDRangeKernel(cl_command_queue command_queue,
 		}
 	}
 
+	/* Send arguments */
+	r = prg_get_comm_section(prg, &comm);
+	if (r != CL_SUCCESS) {
+		return r;
+	}
+
+	cl_uint num_args;
+
+	r = kern_get_num_args(kernel, &num_args);
+	if (r != CL_SUCCESS) {
+		return r;
+	}
+
+	uint64_t paddr = comm.phys_addr;
+	struct comm_area_header h_comm;
+	size_t sz;
+
+	h_comm.magic = BAREMETAL_CRT_COMM_MAGIC;
+	h_comm.num_args = num_args;
+
+	sz = sizeof(struct comm_area_header);
+	r = dev_write_mem(dev, paddr, (const char *)&h_comm, sz);
+	if (r != CL_SUCCESS) {
+		return r;
+	}
+	paddr += sz;
+
+	for (cl_uint i = 0; i < num_args; i++) {
+		struct kern_arg arg;
+		struct comm_arg_header h_arg;
+
+		r = kern_get_arg(kernel, i, &arg);
+		if (r != CL_SUCCESS) {
+			return r;
+		}
+
+		h_arg.argtype = 0;
+		h_arg.index = i;
+		h_arg.size = arg.size;
+
+		sz = sizeof(struct comm_arg_header);
+		if (comm.phys_addr + comm.size <= paddr + sz + arg.size) {
+			log_err("");
+			return CL_OUT_OF_RESOURCES;
+		}
+
+		r = dev_write_mem(dev, paddr, (const char *)&h_arg, sz);
+		if (r != CL_SUCCESS) {
+			return r;
+		}
+		paddr += sz;
+
+		r = dev_write_mem(dev, paddr, arg.val, arg.size);
+		if (r != CL_SUCCESS) {
+			return r;
+		}
+		paddr += arg.size;
+		if (paddr % 4 != 0) {
+			paddr = ((paddr / 4) + 1) * 4;
+		}
+	}
+
+	/* Exec */
 	r = dev_reset(dev);
 	if (r != CL_SUCCESS) {
 		return r;

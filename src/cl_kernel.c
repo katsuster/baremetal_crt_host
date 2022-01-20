@@ -27,9 +27,19 @@ cl_kernel in_clCreateKernel(cl_program program,
 		goto err_out;
 	}
 
+	/* TODO: how to get number of args of program?? */
+	int n = 8;
+
+	r = kern_set_num_args(kern, n);
+	if (r != CL_SUCCESS) {
+		goto err_out;
+	}
+
 	return kern;
 
 err_out:
+	kern_free(kern);
+
 	if (errcode_ret != NULL) {
 		*errcode_ret = r;
 	}
@@ -82,6 +92,18 @@ cl_int in_clSetKernelArg(cl_kernel  kernel,
 		return CL_INVALID_ARG_VALUE;
 	}
 	if ((r = kern_is_valid(kernel)) != CL_SUCCESS) {
+		return r;
+	}
+
+	struct kern_arg arg;
+
+	/* TODO: arg type */
+	arg.argtype = 0;
+	arg.size = arg_size;
+	arg.val = arg_value;
+
+	r = kern_set_arg(kernel, arg_index, &arg);
+	if (r != CL_SUCCESS) {
 		return r;
 	}
 

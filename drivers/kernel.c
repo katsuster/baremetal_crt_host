@@ -43,6 +43,11 @@ cl_int kern_free(cl_kernel kern)
 		return r;
 	}
 
+	if (kern->args != NULL) {
+		free(kern->args);
+		kern->args = NULL;
+	}
+
 	free(kern);
 
 	return CL_SUCCESS;
@@ -55,4 +60,77 @@ cl_program kern_get_program(cl_kernel kern)
 	}
 
 	return kern->prg;
+}
+
+cl_int kern_get_num_args(cl_kernel kern, cl_uint *num)
+{
+	cl_int r;
+
+	if ((r = kern_is_valid(kern)) != CL_SUCCESS) {
+		return r;
+	}
+
+	if (num != NULL) {
+		*num = kern->num_args;
+	}
+
+	return CL_SUCCESS;
+}
+
+cl_int kern_set_num_args(cl_kernel kern, cl_uint num)
+{
+	cl_int r;
+
+	if ((r = kern_is_valid(kern)) != CL_SUCCESS) {
+		return r;
+	}
+
+	if (kern->args != NULL) {
+		free(kern->args);
+		kern->args = NULL;
+	}
+
+	kern->args = calloc(num, sizeof(struct kern_arg));
+	if (kern->args == NULL) {
+		log_err("Failed to alloc kern_arg.\n");
+		return CL_OUT_OF_HOST_MEMORY;
+	}
+	kern->num_args = num;
+
+	return CL_SUCCESS;
+}
+
+cl_int kern_get_arg(cl_kernel kern, cl_uint i, struct kern_arg *arg)
+{
+	cl_int r;
+
+	if ((r = kern_is_valid(kern)) != CL_SUCCESS) {
+		return r;
+	}
+	if (i < 0 || kern->num_args <= i) {
+		return CL_INVALID_VALUE;
+	}
+
+	if (arg) {
+		*arg = kern->args[i];
+	}
+
+	return CL_SUCCESS;
+}
+
+cl_int kern_set_arg(cl_kernel kern, cl_uint i, const struct kern_arg *arg)
+{
+	cl_int r;
+
+	if ((r = kern_is_valid(kern)) != CL_SUCCESS) {
+		return r;
+	}
+	if (arg == NULL || i < 0 || kern->num_args <= i) {
+		return CL_INVALID_VALUE;
+	}
+
+	kern->args[i] = *arg;
+	kern->args[i].index = i;
+
+	return CL_SUCCESS;
 }
