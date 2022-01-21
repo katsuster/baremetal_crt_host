@@ -13,6 +13,11 @@ struct program_chunk {
 	cl_uint size;
 };
 
+struct program_comm {
+	uint64_t addr;
+	uint64_t size;
+};
+
 struct _cl_program {
 	struct _cl_icd_dispatch *dispatch;
 	cl_int magic;
@@ -32,7 +37,7 @@ struct _cl_program {
 	 *   - arguments (device <- host)
 	 *   - results (host <- device)
 	 */
-	struct comm_section comm;
+	struct program_comm comm;
 };
 
 static inline cl_int prg_is_valid(const cl_program program)
@@ -56,8 +61,8 @@ cl_int prg_set_num_chunks(cl_program prg, int num);
 cl_int prg_get_chunk(cl_program prg, int i, struct program_chunk *chunk);
 cl_int prg_set_chunk(cl_program prg, int i, const struct program_chunk *chunk);
 
-cl_int prg_get_comm_section(cl_program prg, struct comm_section *comm);
-cl_int prg_set_comm_section(cl_program prg, const struct comm_section *comm);
+cl_int prg_get_comm(cl_program prg, struct program_comm *comm);
+cl_int prg_set_comm(cl_program prg, const struct program_comm *comm);
 
 /* binary: ELF */
 cl_int prg_elf_load(cl_program prg, const unsigned char *buf, size_t len);

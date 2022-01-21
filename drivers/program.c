@@ -121,7 +121,7 @@ cl_int prg_set_chunk(cl_program prg, int i, const struct program_chunk *chunk)
 	return CL_SUCCESS;
 }
 
-cl_int prg_get_comm_section(cl_program prg, struct comm_section *comm)
+cl_int prg_get_comm(cl_program prg, struct program_comm *comm)
 {
 	cl_int r;
 
@@ -136,7 +136,7 @@ cl_int prg_get_comm_section(cl_program prg, struct comm_section *comm)
 	return CL_SUCCESS;
 }
 
-cl_int prg_set_comm_section(cl_program prg, const struct comm_section *comm)
+cl_int prg_set_comm(cl_program prg, const struct program_comm *comm)
 {
 	cl_int r;
 

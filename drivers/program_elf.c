@@ -81,7 +81,8 @@ struct elf_info {
 	struct sec_header *shs;
 
 	// Communication area
-	const struct comm_section *comm;
+	const struct __comm_section *comm_sec;
+	struct program_comm comm;
 };
 
 static inline cl_int prg_elf_is_valid(const cl_program prg)
@@ -531,27 +532,44 @@ static cl_int prg_elf_read_shs(struct elf_info *elf)
 	elf->shstr_ent = (const char *)elf->buf + shstr->sh_offset;
 	elf->shstr_size = shstr->sh_size;
 
-	int found_comm = 0;
+	int found_comm = 0, found_comm_area = 0;
 
 	for (uint32_t i = 0; i < elf->e_shnum; i++) {
 		struct sec_header *sec = &elf->shs[i];
 		const char *sec_name = get_sh_name(elf, sec->sh_name);
 
 		if (strcmp(sec_name, BAREMETAL_CRT_COMM_SECTION) == 0) {
+			const struct __comm_section *c;
 			const uint8_t *ent_comm = elf->buf + sec->sh_offset;
 
-			elf->comm = (const struct comm_section *)ent_comm;
+			c = (const struct __comm_section *)ent_comm;
+			if (c->magic != BAREMETAL_CRT_COMM_MAGIC) {
+				log_warn("found comm section but has wrong magic.\n");
+				continue;
+			}
+
+			elf->comm_sec = c;
 
 			found_comm = 1;
 		}
 
+		if (strcmp(sec_name, BAREMETAL_CRT_COMM_AREA_SECTION) == 0) {
+			elf->comm.addr = sec->sh_addr;
+			elf->comm.size = sec->sh_size;
+
+			found_comm_area = 1;
+		}
 	}
 	if (!found_comm) {
 		log_err("not found communication section '%s'\n", BAREMETAL_CRT_COMM_SECTION);
 		return CL_INVALID_BINARY;
 	}
+	if (!found_comm_area) {
+		log_err("not found communication area section '%s'\n", BAREMETAL_CRT_COMM_AREA_SECTION);
+		return CL_INVALID_BINARY;
+	}
 
-	r = prg_set_comm_section(elf->prg, elf->comm);
+	r = prg_set_comm(elf->prg, &elf->comm);
 	if (r != CL_SUCCESS) {
 		return r;
 	}
@@ -630,11 +648,12 @@ static void prg_elf_dump_shs(const struct elf_info *elf)
 		log_dbg("    sh entsize  : 0x%" PRIx64 "\n", sec->sh_entsize);
 	}
 
-	log_dbg("  comm: hdr:%p\n", elf->comm);
-	log_dbg("    magic     : 0x%" PRIx32 "\n", elf->comm->magic);
-	log_dbg("    base_addr : 0x%" PRIx64 "\n", elf->comm->base_addr);
-	log_dbg("    phys_addr : 0x%" PRIx64 "\n", elf->comm->phys_addr);
-	log_dbg("    size      : 0x%" PRIx64 "\n", elf->comm->size);
+	log_dbg("  comm_sec: hdr:%p\n", elf->comm_sec);
+	log_dbg("    magic     : 0x%" PRIx32 "\n", elf->comm_sec->magic);
+
+	log_dbg("  comm:\n");
+	log_dbg("    addr: 0x%" PRIx64 "\n", elf->comm.addr);
+	log_dbg("    size: 0x%" PRIx64 "\n", elf->comm.size);
 }
 
 cl_int prg_elf_load(cl_program prg, const uint8_t *buf, size_t len)
