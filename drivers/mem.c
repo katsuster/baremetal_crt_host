@@ -123,6 +123,42 @@ cl_int mem_free_buffer(cl_mem mem)
 	return CL_SUCCESS;
 }
 
+cl_int mem_read_buffer(cl_mem mem, size_t offset, size_t size, void *ptr)
+{
+	char *bufptr;
+	cl_int r;
+
+	if ((r = mem_is_valid(mem)) != CL_SUCCESS) {
+		return r;
+	}
+	if (ptr == NULL || offset + size > mem->size) {
+		return CL_INVALID_VALUE;
+	}
+
+	bufptr = &mem->ptr[offset];
+	memcpy(ptr, bufptr, size);
+
+	return CL_SUCCESS;
+}
+
+cl_int mem_write_buffer(cl_mem mem, size_t offset, size_t size, const void *ptr)
+{
+	char *bufptr;
+	cl_int r;
+
+	if ((r = mem_is_valid(mem)) != CL_SUCCESS) {
+		return r;
+	}
+	if (ptr == NULL || offset + size > mem->size) {
+		return CL_INVALID_VALUE;
+	}
+
+	bufptr = &mem->ptr[offset];
+	memcpy(bufptr, ptr, size);
+
+	return CL_SUCCESS;
+}
+
 int mem_can_read(cl_mem mem)
 {
 	return !!(mem->flags & CL_MEM_READ_WRITE) || !!(mem->flags & CL_MEM_READ_ONLY);

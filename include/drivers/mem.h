@@ -35,6 +35,8 @@ cl_int mem_get_attr(cl_mem mem, cl_int *flags);
 cl_int mem_set_attr(cl_mem mem, cl_int flags);
 cl_int mem_alloc_buffer(cl_mem mem, size_t size, void *ptr);
 cl_int mem_free_buffer(cl_mem mem);
+cl_int mem_read_buffer(cl_mem mem, size_t offset, size_t size, void *ptr);
+cl_int mem_write_buffer(cl_mem mem, size_t offset, size_t size, const void *ptr);
 
 int mem_can_read(cl_mem mem);
 int mem_can_write(cl_mem mem);

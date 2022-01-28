@@ -32,6 +32,22 @@ cl_int in_clEnqueueReadBuffer(cl_command_queue command_queue,
 			      const cl_event   *event_wait_list,
 			      cl_event         *event)
 {
+	cl_int r;
+
+	if ((r = cmdq_is_valid(command_queue)) != CL_SUCCESS) {
+		return r;
+	}
+	if ((r = mem_is_valid(buffer)) != CL_SUCCESS) {
+		return r;
+	}
+
+	/* TODO: non-blocking write operation */
+
+	r = mem_read_buffer(buffer, offset, size, ptr);
+	if (r != CL_SUCCESS) {
+		return r;
+	}
+
 	return CL_SUCCESS;
 }
 
@@ -63,6 +79,22 @@ cl_int in_clEnqueueWriteBuffer(cl_command_queue command_queue,
 			       const cl_event   *event_wait_list,
 			       cl_event         *event)
 {
+	cl_int r;
+
+	if ((r = cmdq_is_valid(command_queue)) != CL_SUCCESS) {
+		return r;
+	}
+	if ((r = mem_is_valid(buffer)) != CL_SUCCESS) {
+		return r;
+	}
+
+	/* TODO: non-blocking write operation */
+
+	r = mem_write_buffer(buffer, offset, size, ptr);
+	if (r != CL_SUCCESS) {
+		return r;
+	}
+
 	return CL_SUCCESS;
 }
 
