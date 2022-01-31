@@ -97,10 +97,21 @@ cl_int in_clSetKernelArg(cl_kernel  kernel,
 
 	struct kern_arg arg;
 
-	/* TODO: arg type */
-	arg.argtype = 0;
-	arg.size = arg_size;
-	arg.val = arg_value;
+	/* FIXME:
+	 * current implementation cannot pass the values that has same size
+	 * of pointer. And cannot identify CL types because cl_mem, cl_sampler and
+	 * cl_command_queue are pointer so they has same size.
+	 * We need to get kernel arguments type from kernel binary.
+	 */
+	if (arg_size == sizeof(void *)) {
+		arg.argtype = __COMM_ARG_MEM;
+		arg.size = arg_size;
+		arg.val = *(cl_mem *)arg_value;
+	} else {
+		arg.argtype = __COMM_ARG_VAL;
+		arg.size = arg_size;
+		arg.val = arg_value;
+	}
 
 	r = kern_set_arg(kernel, arg_index, &arg);
 	if (r != CL_SUCCESS) {

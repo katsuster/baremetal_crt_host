@@ -3,6 +3,7 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <in_cl.h>
 #include <drivers/command_queue.h>
@@ -194,6 +195,86 @@ cl_int in_clEnqueueMigrateMemObjects(cl_command_queue       command_queue,
 	return CL_INVALID_COMMAND_QUEUE;
 }
 
+static cl_int enqueue_arg(cl_device_id dev, cl_kernel kernel, const struct program_comm *comm, uint64_t *paddr, cl_uint index)
+{
+	struct kern_arg arg;
+	struct __comm_arg_header h_arg;
+	const void *ptr;
+	size_t size_head, size_buf;
+	int need_write = 0;
+	cl_int r;
+
+	r = kern_get_arg(kernel, index, &arg);
+	if (r != CL_SUCCESS) {
+		return r;
+	}
+
+	switch (arg.argtype) {
+	case __COMM_ARG_NOTUSED:
+		ptr = NULL;
+		size_buf = 0;
+
+		break;
+	case __COMM_ARG_VAL:
+		/* Direct value */
+		ptr = arg.val;
+		size_buf = arg.size;
+		need_write = 1;
+
+		break;
+	case __COMM_ARG_MEM:
+		/* cl_mem */
+		const cl_mem mem = (const cl_mem)arg.val;
+
+		if ((r = mem_is_valid(mem)) != CL_SUCCESS) {
+			return r;
+		}
+
+		ptr = mem->ptr;
+		size_buf = mem->size;
+
+		if (mem_can_read(mem)) {
+			need_write = 1;
+		}
+
+		break;
+	default:
+		log_err("unknown kernel argument type.\n");
+		return CL_INVALID_KERNEL;
+	}
+
+	h_arg.argtype = arg.argtype;
+	h_arg.index = index;
+	h_arg.size = size_buf;
+
+	size_head = sizeof(struct __comm_arg_header);
+	if (comm->addr + comm->size <= *paddr + size_head + size_buf) {
+		log_err("kernel arguments exceeds comm area size 0x%" PRIx64 ".\n",
+			comm->size);
+		return CL_OUT_OF_RESOURCES;
+	}
+
+	r = dev_write_mem(dev, *paddr, (const char *)&h_arg, size_head);
+	if (r != CL_SUCCESS) {
+		return r;
+	}
+	*paddr += size_head;
+
+	if (need_write) {
+		r = dev_write_mem(dev, *paddr, ptr, size_buf);
+		if (r != CL_SUCCESS) {
+			return r;
+		}
+	}
+	*paddr += size_buf;
+
+	if (*paddr % 4 != 0) {
+		*paddr = ((*paddr / 4) + 1) * 4;
+	}
+
+	return CL_SUCCESS;
+}
+
 cl_int in_clEnqueueNDRangeKernel(cl_command_queue command_queue,
 				 cl_kernel        kernel,
 				 cl_uint          work_dim,
@@ -244,53 +325,26 @@ cl_int in_clEnqueueNDRangeKernel(cl_command_queue command_queue,
 		return r;
 	}
 
-	uint64_t paddr = comm.addr;
 	struct __comm_area_header h_comm;
 	size_t sz;
 
 	h_comm.magic = BAREMETAL_CRT_COMM_MAGIC;
 	h_comm.num_args = num_args;
+	h_comm.done = 0;
+	h_comm.ret_main = 0;
 
 	sz = sizeof(struct __comm_area_header);
-	r = dev_write_mem(dev, paddr, (const char *)&h_comm, sz);
+	r = dev_write_mem(dev, comm.addr, (const char *)&h_comm, sz);
 	if (r != CL_SUCCESS) {
 		return r;
 	}
-	paddr += sz;
+
+	uint64_t paddr = comm.addr + sz;
 
 	for (cl_uint i = 0; i < num_args; i++) {
-		struct kern_arg arg;
-		struct __comm_arg_header h_arg;
-
-		r = kern_get_arg(kernel, i, &arg);
+		r = enqueue_arg(dev, kernel, &comm, &paddr, i);
 		if (r != CL_SUCCESS) {
 			return r;
-		}
-
-		h_arg.argtype = 0;
-		h_arg.index = i;
-		h_arg.size = arg.size;
-
-		sz = sizeof(struct __comm_arg_header);
-		if (comm.addr + comm.size <= paddr + sz + arg.size) {
-			log_err("kernel arguments exceeds comm area size 0x%" PRIx64 ".\n",
-				comm.size);
-			return CL_OUT_OF_RESOURCES;
-		}
-
-		r = dev_write_mem(dev, paddr, (const char *)&h_arg, sz);
-		if (r != CL_SUCCESS) {
-			return r;
-		}
-		paddr += sz;
-
-		r = dev_write_mem(dev, paddr, arg.val, arg.size);
-		if (r != CL_SUCCESS) {
-			return r;
-		}
-		paddr += arg.size;
-		if (paddr % 4 != 0) {
-			paddr = ((paddr / 4) + 1) * 4;
 		}
 	}
 
@@ -298,6 +352,47 @@ cl_int in_clEnqueueNDRangeKernel(cl_command_queue command_queue,
 	r = dev_reset(dev);
 	if (r != CL_SUCCESS) {
 		return r;
+	}
+
+	r = dev_run(dev);
+	if (r != CL_SUCCESS) {
+		return r;
+	}
+
+	/* Polling 100 seconds */
+	int done = 0;
+
+	for (int j = 0; j < 10000; j++) {
+		usleep(10000);
+
+		r = dev_stop(dev);
+		if (r != CL_SUCCESS) {
+			return r;
+		}
+
+		sz = sizeof(struct __comm_area_header);
+		r = dev_read_mem(dev, comm.addr, (char *)&h_comm, sz);
+		if (r != CL_SUCCESS) {
+			return r;
+		}
+
+		if (h_comm.magic != BAREMETAL_CRT_COMM_MAGIC) {
+			return CL_INVALID_DEVICE;
+		}
+		if (h_comm.done) {
+			done = 1;
+			break;
+		}
+
+		r = dev_run(dev);
+		if (r != CL_SUCCESS) {
+			return r;
+		}
+	}
+	if (!done) {
+		/* Timeout */
+		log_err("Device not answered, abort.\n");
+		return CL_INVALID_DEVICE;
 	}
 
 	return CL_SUCCESS;
