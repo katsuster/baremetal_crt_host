@@ -165,6 +165,22 @@ static cl_int gdb_remote_recv(struct gdb_remote_priv *prv, char *cmd, size_t cmd
 	return CL_SUCCESS;
 }
 
+static cl_int gdb_remote_discard_all(struct gdb_remote_priv *prv)
+{
+	/* Discard old replies */
+	char tmpbuf[4096];
+
+	gdb_remote_send(prv, "vMustReplyEmpty", 0);
+	while (1) {
+		gdb_remote_recv(prv, tmpbuf, sizeof(tmpbuf), 1);
+		if (strcmp(tmpbuf, "") == 0) {
+			break;
+		}
+	}
+
+	return CL_SUCCESS;
+}
+
 static cl_int gdb_remote_probe(cl_device_id dev)
 {
 	struct addrinfo hints, *ai;
@@ -202,16 +218,7 @@ static cl_int gdb_remote_probe(cl_device_id dev)
 
 	freeaddrinfo(ai);
 
-	/* Discard old replies */
-	char tmpbuf[4096];
-
-	gdb_remote_send(prv, "vMustReplyEmpty", 0);
-	while (1) {
-		gdb_remote_recv(prv, tmpbuf, sizeof(tmpbuf), 1);
-		if (strcmp(tmpbuf, "") == 0) {
-			break;
-		}
-	}
+	gdb_remote_discard_all(prv);
 
 	return CL_SUCCESS;
 }
@@ -259,6 +266,19 @@ static cl_int gdb_remote_reset(cl_device_id dev)
 		return CL_INVALID_DEVICE;
 	}
 
+	return CL_SUCCESS;
+}
+
+static cl_int gdb_remote_run(cl_device_id dev)
+{
+	cl_int r;
+
+	if (dev == NULL || dev->priv == NULL) {
+		return CL_INVALID_DEVICE;
+	}
+
+	struct gdb_remote_priv *prv = dev->priv;
+
 	// continue
 	r = gdb_remote_send(prv, "vCont;c", 0);
 	if (r != CL_SUCCESS) {
@@ -268,10 +288,108 @@ static cl_int gdb_remote_reset(cl_device_id dev)
 	return CL_SUCCESS;
 }
 
+static cl_int gdb_remote_stop(cl_device_id dev)
+{
+	if (dev == NULL || dev->priv == NULL) {
+		return CL_INVALID_DEVICE;
+	}
+
+	struct gdb_remote_priv *prv = dev->priv;
+
+	gdb_remote_send(prv, "", 0);
+
+	gdb_remote_discard_all(prv);
+
+	return CL_SUCCESS;
+}
+
+static cl_int gdb_remote_read_mem_one(cl_device_id dev, uint64_t paddr, char *buf, uint64_t len)
+{
+	/* $m00000000,000#00 */
+	char cmd[20];
+	char *strbuf = NULL;
+	size_t buflen = len * 2 + 64;
+	cl_int r = CL_SUCCESS;
+
+	if (dev == NULL || dev->priv == NULL) {
+		return CL_INVALID_DEVICE;
+	}
+	if (len > 0x7f0) {
+		log_err("Too large to read len:%" PRId64 ".\n", len);
+		return CL_INVALID_VALUE;
+	}
+
+	struct gdb_remote_priv *prv = dev->priv;
+
+	snprintf(cmd, sizeof(cmd), "m%08" PRIx64 ",%" PRIx64, paddr, len);
+
+	r = gdb_remote_send(prv, cmd, 1);
+	if (r != CL_SUCCESS) {
+		return r;
+	}
+
+	strbuf = calloc(buflen, sizeof(char));
+	if (strbuf == NULL) {
+		log_err("Failed to calloc recv buf.\n");
+		return CL_OUT_OF_HOST_MEMORY;
+	}
+
+	r = gdb_remote_recv(prv, strbuf, buflen - 1, 1);
+	if (r != CL_SUCCESS) {
+		goto err_out;
+	}
+
+	for (uint64_t i = 0; i < len; i++) {
+		int b, n;
+
+		if (buflen < 2) {
+			log_err("Failed to convert bytes, too short @%" PRId64 ".\n",
+				i * 2);
+			r = CL_OUT_OF_RESOURCES;
+			goto err_out;
+		}
+
+		n = sscanf(&strbuf[i * 2], "%02x", &b);
+		if (n != 1) {
+			log_err("Failed to convert bytes, wrong answer @%" PRId64".\n",
+				i * 2);
+			r = CL_OUT_OF_RESOURCES;
+			goto err_out;
+		}
+
+		buf[i] = b;
+		buflen -= 2;
+	}
+
+	free(strbuf);
+	strbuf = NULL;
+
+err_out:
+	if (strbuf != NULL) {
+		free(strbuf);
+		strbuf = NULL;
+	}
+
+	return CL_SUCCESS;
+}
+
 static cl_int gdb_remote_read_mem(cl_device_id dev, uint64_t paddr, char *buf, uint64_t len)
 {
-	/* TODO: to be implemented */
-	return CL_INVALID_VALUE;
+	uint64_t p = 0;
+	cl_int r;
+
+	while (p < len) {
+		uint64_t l = NMIN(len, 0x7f0);
+
+		r = gdb_remote_read_mem_one(dev, paddr + p, &buf[p], l);
+		if (r != CL_SUCCESS) {
+			return r;
+		}
+
+		p += l;
+	}
+
+	return CL_SUCCESS;
 }
 
 static cl_int gdb_remote_write_mem_one(cl_device_id dev, uint64_t paddr, const char *buf, uint64_t len)
@@ -358,6 +476,8 @@ static const struct dev_ops gdb_remote_ops = {
 	.probe = gdb_remote_probe,
 	.remove = gdb_remote_remove,
 	.reset = gdb_remote_reset,
+	.run = gdb_remote_run,
+	.stop = gdb_remote_stop,
 	.read_mem = gdb_remote_read_mem,
 	.write_mem = gdb_remote_write_mem,
 };
