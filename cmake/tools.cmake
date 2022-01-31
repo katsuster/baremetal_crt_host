@@ -126,6 +126,8 @@ endfunction()
 # Show toolchain settings
 set(SPACER "----")
 
+message("${SPACER} BUILD_TYPE is '${CMAKE_BUILD_TYPE}'")
+
 if(NOT DEFINED CC)
   set(CC gcc)
 endif()
