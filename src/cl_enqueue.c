@@ -195,21 +195,15 @@ cl_int in_clEnqueueMigrateMemObjects(cl_command_queue       command_queue,
 	return CL_INVALID_COMMAND_QUEUE;
 }
 
-static cl_int enqueue_arg(cl_device_id dev, cl_kernel kernel, const struct program_comm *comm, uint64_t *paddr, cl_uint index)
+static cl_int enqueue_arg(cl_device_id dev, const struct kern_arg *arg, const struct program_comm *comm, uint64_t *paddr)
 {
-	struct kern_arg arg;
 	struct __comm_arg_header h_arg;
 	const void *ptr;
 	size_t size_head, size_buf;
 	int need_write = 0;
 	cl_int r;
 
-	r = kern_get_arg(kernel, index, &arg);
-	if (r != CL_SUCCESS) {
-		return r;
-	}
-
-	switch (arg.argtype) {
+	switch (arg->argtype) {
 	case __COMM_ARG_NOTUSED:
 		ptr = NULL;
 		size_buf = 0;
@@ -217,14 +211,14 @@ static cl_int enqueue_arg(cl_device_id dev, cl_kernel kernel, const struct progr
 		break;
 	case __COMM_ARG_VAL:
 		/* Direct value */
-		ptr = arg.val;
-		size_buf = arg.size;
+		ptr = arg->val;
+		size_buf = arg->size;
 		need_write = 1;
 
 		break;
 	case __COMM_ARG_MEM:
 		/* cl_mem */
-		const cl_mem mem = (const cl_mem)arg.val;
+		const cl_mem mem = (const cl_mem)arg->val;
 
 		if ((r = mem_is_valid(mem)) != CL_SUCCESS) {
 			return r;
@@ -247,8 +241,8 @@ static cl_int enqueue_arg(cl_device_id dev, cl_kernel kernel, const struct progr
 		return CL_INVALID_KERNEL;
 	}
 
-	h_arg.argtype = arg.argtype;
-	h_arg.index = index;
+	h_arg.argtype = arg->argtype;
+	h_arg.index = arg->index;
 	h_arg.size = size_buf;
 
 	size_head = sizeof(struct __comm_arg_header);
@@ -277,20 +271,14 @@ static cl_int enqueue_arg(cl_device_id dev, cl_kernel kernel, const struct progr
 	return CL_SUCCESS;
 }
 
-static cl_int dequeue_arg(cl_device_id dev, cl_kernel kernel, const struct program_comm *comm, uint64_t *paddr, cl_uint index)
+static cl_int dequeue_arg(cl_device_id dev, const struct kern_arg *arg, const struct program_comm *comm, uint64_t *paddr)
 {
-	struct kern_arg arg;
 	void *ptr;
 	size_t size_head, size_buf;
 	int need_read = 0;
 	cl_int r;
 
-	r = kern_get_arg(kernel, index, &arg);
-	if (r != CL_SUCCESS) {
-		return r;
-	}
-
-	switch (arg.argtype) {
+	switch (arg->argtype) {
 	case __COMM_ARG_NOTUSED:
 		ptr = NULL;
 		size_buf = 0;
@@ -299,13 +287,13 @@ static cl_int dequeue_arg(cl_device_id dev, cl_kernel kernel, const struct progr
 	case __COMM_ARG_VAL:
 		/* Direct value cannot be change by the kernel */
 		ptr = NULL;
-		size_buf = arg.size;
+		size_buf = arg->size;
 		need_read = 0;
 
 		break;
 	case __COMM_ARG_MEM:
 		/* cl_mem */
-		const cl_mem mem = (const cl_mem)arg.val;
+		const cl_mem mem = (const cl_mem)arg->val;
 
 		if ((r = mem_is_valid(mem)) != CL_SUCCESS) {
 			return r;
@@ -416,9 +404,26 @@ cl_int in_clEnqueueNDRangeKernel(cl_command_queue command_queue,
 
 	/* Send arguments */
 	uint64_t paddr = comm.addr + sizeof(struct __comm_area_header);
+	struct kern_arg arg;
+
+	/* argv[0] is kernel name */
+	arg.argtype = __COMM_ARG_VAL;
+	arg.index = -1;
+	arg.size = strlen(kernel->name) + 1;
+	arg.val = kernel->name;
+
+	r = enqueue_arg(dev, &arg, &comm, &paddr);
+	if (r != CL_SUCCESS) {
+		return r;
+	}
 
 	for (cl_uint i = 0; i < num_args; i++) {
-		r = enqueue_arg(dev, kernel, &comm, &paddr, i);
+		r = kern_get_arg(kernel, i, &arg);
+		if (r != CL_SUCCESS) {
+			return r;
+		}
+
+		r = enqueue_arg(dev, &arg, &comm, &paddr);
 		if (r != CL_SUCCESS) {
 			return r;
 		}
@@ -474,8 +479,24 @@ cl_int in_clEnqueueNDRangeKernel(cl_command_queue command_queue,
 	/* Recv arguments */
 	paddr = comm.addr + sizeof(struct __comm_area_header);
 
+	/* Skip argv[0] (kernel name) */
+	arg.argtype = __COMM_ARG_VAL;
+	arg.index = -1;
+	arg.size = strlen(kernel->name) + 1;
+	arg.val = kernel->name;
+
+	r = dequeue_arg(dev, &arg, &comm, &paddr);
+	if (r != CL_SUCCESS) {
+		return r;
+	}
+
 	for (cl_uint i = 0; i < num_args; i++) {
-		r = dequeue_arg(dev, kernel, &comm, &paddr, i);
+		r = kern_get_arg(kernel, i, &arg);
+		if (r != CL_SUCCESS) {
+			return r;
+		}
+
+		r = dequeue_arg(dev, &arg, &comm, &paddr);
 		if (r != CL_SUCCESS) {
 			return r;
 		}
