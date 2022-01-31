@@ -11,6 +11,8 @@ struct dev_ops {
 	cl_int (*probe)(cl_device_id dev);
 	cl_int (*remove)(cl_device_id dev);
 	cl_int (*reset)(cl_device_id dev);
+	cl_int (*run)(cl_device_id dev);
+	cl_int (*stop)(cl_device_id dev);
 	cl_int (*read_mem)(cl_device_id dev, uint64_t paddr, char *buf, uint64_t len);
 	cl_int (*write_mem)(cl_device_id dev, uint64_t paddr, const char *buf, uint64_t len);
 };
@@ -52,6 +54,8 @@ cl_int dev_add(cl_device_id dev);
 cl_int dev_remove(cl_device_id dev);
 
 cl_int dev_reset(cl_device_id dev);
+cl_int dev_run(cl_device_id dev);
+cl_int dev_stop(cl_device_id dev);
 cl_int dev_read_mem(cl_device_id dev, uint64_t paddr, char *buf, uint64_t len);
 cl_int dev_write_mem(cl_device_id dev, uint64_t paddr, const char *buf, uint64_t len);
 

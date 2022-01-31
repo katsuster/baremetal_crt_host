@@ -197,6 +197,34 @@ cl_int dev_reset(cl_device_id dev)
 	return dev->ops->reset(dev);
 }
 
+cl_int dev_run(cl_device_id dev)
+{
+	cl_int r;
+
+	if ((r = dev_is_valid(dev)) != CL_SUCCESS) {
+		return r;
+	}
+	if (dev->ops == NULL || dev->ops->run == NULL) {
+		return CL_INVALID_DEVICE;
+	}
+
+	return dev->ops->run(dev);
+}
+
+cl_int dev_stop(cl_device_id dev)
+{
+	cl_int r;
+
+	if ((r = dev_is_valid(dev)) != CL_SUCCESS) {
+		return r;
+	}
+	if (dev->ops == NULL || dev->ops->stop == NULL) {
+		return CL_INVALID_DEVICE;
+	}
+
+	return dev->ops->stop(dev);
+}
+
 cl_int dev_read_mem(cl_device_id dev, uint64_t paddr, char *buf, uint64_t len)
 {
 	cl_int r;
@@ -206,6 +234,12 @@ cl_int dev_read_mem(cl_device_id dev, uint64_t paddr, char *buf, uint64_t len)
 	}
 	if (dev->ops == NULL || dev->ops->read_mem == NULL) {
 		return CL_INVALID_DEVICE;
+	}
+	if (buf == NULL && len != 0) {
+		return CL_INVALID_VALUE;
+	}
+	if (len == 0) {
+		return CL_SUCCESS;
 	}
 
 	return dev->ops->read_mem(dev, paddr, buf, len);
@@ -220,6 +254,12 @@ cl_int dev_write_mem(cl_device_id dev, uint64_t paddr, const char *buf, uint64_t
 	}
 	if (dev->ops == NULL || dev->ops->write_mem == NULL) {
 		return CL_INVALID_DEVICE;
+	}
+	if (buf == NULL && len != 0) {
+		return CL_INVALID_VALUE;
+	}
+	if (len == 0) {
+		return CL_SUCCESS;
 	}
 
 	return dev->ops->write_mem(dev, paddr, buf, len);
