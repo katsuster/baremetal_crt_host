@@ -233,6 +233,10 @@ static cl_int enqueue_arg(cl_device_id dev, cl_kernel kernel, const struct progr
 		ptr = mem->ptr;
 		size_buf = mem->size;
 
+		/*
+		 * If mem_can_read is true, it means that the kernel
+		 * will read from this buffer. Need to write.
+		 */
 		if (mem_can_read(mem)) {
 			need_write = 1;
 		}
@@ -262,6 +266,81 @@ static cl_int enqueue_arg(cl_device_id dev, cl_kernel kernel, const struct progr
 
 	if (need_write) {
 		r = dev_write_mem(dev, *paddr, ptr, size_buf);
+		if (r != CL_SUCCESS) {
+			return r;
+		}
+	}
+	*paddr += size_buf;
+
+	if (*paddr % 4 != 0) {
+		*paddr = ((*paddr / 4) + 1) * 4;
+	}
+
+	return CL_SUCCESS;
+}
+
+static cl_int dequeue_arg(cl_device_id dev, cl_kernel kernel, const struct program_comm *comm, uint64_t *paddr, cl_uint index)
+{
+	struct kern_arg arg;
+	void *ptr;
+	size_t size_head, size_buf;
+	int need_read = 0;
+	cl_int r;
+
+	r = kern_get_arg(kernel, index, &arg);
+	if (r != CL_SUCCESS) {
+		return r;
+	}
+
+	switch (arg.argtype) {
+	case __COMM_ARG_NOTUSED:
+		ptr = NULL;
+		size_buf = 0;
+
+		break;
+	case __COMM_ARG_VAL:
+		/* Direct value cannot be change by the kernel */
+		ptr = NULL;
+		size_buf = arg.size;
+		need_read = 0;
+
+		break;
+	case __COMM_ARG_MEM:
+		/* cl_mem */
+		const cl_mem mem = (const cl_mem)arg.val;
+
+		if ((r = mem_is_valid(mem)) != CL_SUCCESS) {
+			return r;
+		}
+
+		ptr = mem->ptr;
+		size_buf = mem->size;
+
+		/*
+		 * If mem_can_write is true, it means that the kernel
+		 * may change this buffer. Need to read back.
+		 */
+		if (mem_can_write(mem)) {
+			need_read = 1;
+		}
+
+		break;
+	default:
+		log_err("unknown kernel argument type.\n");
+		return CL_INVALID_KERNEL;
+	}
+
+	size_head = sizeof(struct __comm_arg_header);
+	if (comm->addr + comm->size <= *paddr + size_head + size_buf) {
+		log_err("kernel arguments exceeds comm area size 0x%" PRIx64 ".\n",
+			comm->size);
+		return CL_OUT_OF_RESOURCES;
+	}
+
+	*paddr += size_head;
+
+	if (need_read) {
+		r = dev_read_mem(dev, *paddr, ptr, size_buf);
 		if (r != CL_SUCCESS) {
 			return r;
 		}
@@ -312,7 +391,7 @@ cl_int in_clEnqueueNDRangeKernel(cl_command_queue command_queue,
 		}
 	}
 
-	/* Send arguments */
+	/* Get arguments */
 	r = prg_get_comm(prg, &comm);
 	if (r != CL_SUCCESS) {
 		return r;
@@ -339,7 +418,8 @@ cl_int in_clEnqueueNDRangeKernel(cl_command_queue command_queue,
 		return r;
 	}
 
-	uint64_t paddr = comm.addr + sz;
+	/* Send arguments */
+	uint64_t paddr = comm.addr + sizeof(struct __comm_area_header);
 
 	for (cl_uint i = 0; i < num_args; i++) {
 		r = enqueue_arg(dev, kernel, &comm, &paddr, i);
@@ -393,6 +473,16 @@ cl_int in_clEnqueueNDRangeKernel(cl_command_queue command_queue,
 		/* Timeout */
 		log_err("Device not answered, abort.\n");
 		return CL_INVALID_DEVICE;
+	}
+
+	/* Recv arguments */
+	paddr = comm.addr + sizeof(struct __comm_area_header);
+
+	for (cl_uint i = 0; i < num_args; i++) {
+		r = dequeue_arg(dev, kernel, &comm, &paddr, i);
+		if (r != CL_SUCCESS) {
+			return r;
+		}
 	}
 
 	return CL_SUCCESS;
