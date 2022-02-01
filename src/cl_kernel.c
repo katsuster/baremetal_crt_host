@@ -27,6 +27,11 @@ cl_kernel in_clCreateKernel(cl_program program,
 		goto err_out;
 	}
 
+	r = kern_set_name(kern, kernel_name);
+	if (r != CL_SUCCESS) {
+		goto err_out;
+	}
+
 	/* TODO: how to get number of args of program?? */
 	int n = 8;
 

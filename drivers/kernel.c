@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 #include <stdio.h>
+#include <string.h>
 
 #include <in_cl.h>
 #include <drivers/kernel.h>
@@ -43,6 +44,11 @@ cl_int kern_free(cl_kernel kern)
 		return r;
 	}
 
+	if (kern->name != NULL) {
+		free(kern->name);
+		kern->name = NULL;
+	}
+
 	if (kern->args != NULL) {
 		free(kern->args);
 		kern->args = NULL;
@@ -60,6 +66,50 @@ cl_program kern_get_program(cl_kernel kern)
 	}
 
 	return kern->prg;
+}
+
+cl_int kern_get_name(cl_kernel kern, char *name, size_t len)
+{
+	cl_int r;
+
+	if ((r = kern_is_valid(kern)) != CL_SUCCESS) {
+		return r;
+	}
+	if (kern->name == NULL) {
+		return CL_INVALID_KERNEL;
+	}
+	if (name == NULL) {
+		return CL_INVALID_VALUE;
+	}
+	if (len == 0) {
+		return CL_SUCCESS;
+	}
+
+	strncpy(name, kern->name, len - 1);
+	name[len - 1] = '\0';
+
+	return CL_SUCCESS;
+}
+
+cl_int kern_set_name(cl_kernel kern, const char *name)
+{
+	cl_int r;
+
+	if ((r = kern_is_valid(kern)) != CL_SUCCESS) {
+		return r;
+	}
+	if (name == NULL) {
+		return CL_INVALID_VALUE;
+	}
+
+	if (kern->name != NULL) {
+		free(kern->name);
+		kern->name = NULL;
+	}
+
+	kern->name = strdup(name);
+
+	return CL_SUCCESS;
 }
 
 cl_int kern_get_num_args(cl_kernel kern, cl_uint *num)
@@ -107,8 +157,11 @@ cl_int kern_get_arg(cl_kernel kern, cl_uint i, struct kern_arg *arg)
 	if ((r = kern_is_valid(kern)) != CL_SUCCESS) {
 		return r;
 	}
-	if (i < 0 || kern->num_args <= i) {
+	if (kern->num_args <= i) {
 		return CL_INVALID_VALUE;
+	}
+	if (kern->args == NULL) {
+		return CL_INVALID_KERNEL;
 	}
 
 	if (arg) {
@@ -125,7 +178,7 @@ cl_int kern_set_arg(cl_kernel kern, cl_uint i, const struct kern_arg *arg)
 	if ((r = kern_is_valid(kern)) != CL_SUCCESS) {
 		return r;
 	}
-	if (arg == NULL || i < 0 || kern->num_args <= i) {
+	if (arg == NULL || kern->num_args <= i) {
 		return CL_INVALID_VALUE;
 	}
 

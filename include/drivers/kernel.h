@@ -18,6 +18,7 @@ struct _cl_kernel {
 	cl_int id;
 	cl_program prg;
 
+	char *name;
 	cl_int num_args;
 	struct kern_arg *args;
 };
@@ -40,6 +41,8 @@ cl_int kern_free(cl_kernel kern);
 
 cl_program kern_get_program(cl_kernel kern);
 
+cl_int kern_get_name(cl_kernel kern, char *name, size_t len);
+cl_int kern_set_name(cl_kernel kern, const char *name);
 cl_int kern_get_num_args(cl_kernel kern, cl_uint *num);
 cl_int kern_set_num_args(cl_kernel kern, cl_uint num);
 cl_int kern_get_arg(cl_kernel kern, cl_uint i, struct kern_arg *arg);
