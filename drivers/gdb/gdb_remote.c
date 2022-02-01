@@ -379,7 +379,7 @@ static cl_int gdb_remote_read_mem(cl_device_id dev, uint64_t paddr, char *buf, u
 	cl_int r;
 
 	while (p < len) {
-		uint64_t l = NMIN(len, 0x7f0);
+		uint64_t l = NMIN(len - p, 0x7f0);
 
 		r = gdb_remote_read_mem_one(dev, paddr + p, &buf[p], l);
 		if (r != CL_SUCCESS) {
@@ -459,7 +459,7 @@ static cl_int gdb_remote_write_mem(cl_device_id dev, uint64_t paddr, const char 
 	cl_int r;
 
 	while (p < len) {
-		uint64_t l = NMIN(len, 0x7f0);
+		uint64_t l = NMIN(len - p, 0x7f0);
 
 		r = gdb_remote_write_mem_one(dev, paddr + p, &buf[p], l);
 		if (r != CL_SUCCESS) {
