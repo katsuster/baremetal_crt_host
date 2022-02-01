@@ -197,6 +197,7 @@ cl_int in_clEnqueueMigrateMemObjects(cl_command_queue       command_queue,
 
 static cl_int enqueue_arg(cl_device_id dev, const struct kern_arg *arg, const struct program_comm *comm, uint64_t *paddr)
 {
+	cl_mem mem;
 	struct __comm_arg_header h_arg;
 	const void *ptr;
 	size_t size_head, size_buf;
@@ -218,7 +219,7 @@ static cl_int enqueue_arg(cl_device_id dev, const struct kern_arg *arg, const st
 		break;
 	case __COMM_ARG_MEM:
 		/* cl_mem */
-		const cl_mem mem = (const cl_mem)arg->val;
+		mem = (cl_mem)arg->val;
 
 		if ((r = mem_is_valid(mem)) != CL_SUCCESS) {
 			return r;
@@ -273,6 +274,7 @@ static cl_int enqueue_arg(cl_device_id dev, const struct kern_arg *arg, const st
 
 static cl_int dequeue_arg(cl_device_id dev, const struct kern_arg *arg, const struct program_comm *comm, uint64_t *paddr)
 {
+	cl_mem mem;
 	void *ptr;
 	size_t size_head, size_buf;
 	int need_read = 0;
@@ -293,7 +295,7 @@ static cl_int dequeue_arg(cl_device_id dev, const struct kern_arg *arg, const st
 		break;
 	case __COMM_ARG_MEM:
 		/* cl_mem */
-		const cl_mem mem = (const cl_mem)arg->val;
+		mem = (cl_mem)arg->val;
 
 		if ((r = mem_is_valid(mem)) != CL_SUCCESS) {
 			return r;
