@@ -272,9 +272,7 @@ static cl_int enqueue_arg(cl_device_id dev, cl_kernel kernel, const struct progr
 	}
 	*paddr += size_buf;
 
-	if (*paddr % 4 != 0) {
-		*paddr = ((*paddr / 4) + 1) * 4;
-	}
+	*paddr = ALIGN_OF(*paddr, 4);
 
 	return CL_SUCCESS;
 }
@@ -347,9 +345,7 @@ static cl_int dequeue_arg(cl_device_id dev, cl_kernel kernel, const struct progr
 	}
 	*paddr += size_buf;
 
-	if (*paddr % 4 != 0) {
-		*paddr = ((*paddr / 4) + 1) * 4;
-	}
+	*paddr = ALIGN_OF(*paddr, 4);
 
 	return CL_SUCCESS;
 }
