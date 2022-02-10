@@ -303,7 +303,7 @@ static cl_int gdb_remote_stop(cl_device_id dev)
 	return CL_SUCCESS;
 }
 
-static cl_int gdb_remote_read_mem_one(cl_device_id dev, uint64_t paddr, char *buf, uint64_t len)
+static cl_int gdb_remote_read_mem_one(struct gdb_remote_priv *prv, uint64_t paddr, char *buf, uint64_t len)
 {
 	/* $m00000000,000#00 */
 	char cmd[20];
@@ -311,15 +311,10 @@ static cl_int gdb_remote_read_mem_one(cl_device_id dev, uint64_t paddr, char *bu
 	size_t buflen = len * 2 + 64;
 	cl_int r = CL_SUCCESS;
 
-	if (dev == NULL || dev->priv == NULL) {
-		return CL_INVALID_DEVICE;
-	}
 	if (len > 0x7f0) {
 		log_err("Too large to read len:%" PRId64 ".\n", len);
 		return CL_INVALID_VALUE;
 	}
-
-	struct gdb_remote_priv *prv = dev->priv;
 
 	snprintf(cmd, sizeof(cmd), "m%08" PRIx64 ",%" PRIx64, paddr, len);
 
@@ -378,10 +373,16 @@ static cl_int gdb_remote_read_mem(cl_device_id dev, uint64_t paddr, char *buf, u
 	uint64_t p = 0;
 	cl_int r;
 
+	if (dev == NULL || dev->priv == NULL) {
+		return CL_INVALID_DEVICE;
+	}
+
+	struct gdb_remote_priv *prv = dev->priv;
+
 	while (p < len) {
 		uint64_t l = NMIN(len - p, 0x7f0);
 
-		r = gdb_remote_read_mem_one(dev, paddr + p, &buf[p], l);
+		r = gdb_remote_read_mem_one(prv, paddr + p, &buf[p], l);
 		if (r != CL_SUCCESS) {
 			return r;
 		}
@@ -392,7 +393,7 @@ static cl_int gdb_remote_read_mem(cl_device_id dev, uint64_t paddr, char *buf, u
 	return CL_SUCCESS;
 }
 
-static cl_int gdb_remote_write_mem_one(cl_device_id dev, uint64_t paddr, const char *buf, uint64_t len)
+static cl_int gdb_remote_write_mem_one(struct gdb_remote_priv *prv, uint64_t paddr, const char *buf, uint64_t len)
 {
 	char *strbuf = NULL;
 	char tmp[4];
@@ -400,15 +401,10 @@ static cl_int gdb_remote_write_mem_one(cl_device_id dev, uint64_t paddr, const c
 	cl_int r = CL_SUCCESS;
 	int n;
 
-	if (dev == NULL || dev->priv == NULL) {
-		return CL_INVALID_DEVICE;
-	}
 	if (len > 0x7f0) {
 		log_err("Too large to write len:%" PRId64 ".\n", len);
 		return CL_INVALID_VALUE;
 	}
-
-	struct gdb_remote_priv *prv = dev->priv;
 
 	strbuf = calloc(buflen, sizeof(char));
 	if (strbuf == NULL) {
@@ -458,10 +454,16 @@ static cl_int gdb_remote_write_mem(cl_device_id dev, uint64_t paddr, const char 
 	uint64_t p = 0;
 	cl_int r;
 
+	if (dev == NULL || dev->priv == NULL) {
+		return CL_INVALID_DEVICE;
+	}
+
+	struct gdb_remote_priv *prv = dev->priv;
+
 	while (p < len) {
 		uint64_t l = NMIN(len - p, 0x7f0);
 
-		r = gdb_remote_write_mem_one(dev, paddr + p, &buf[p], l);
+		r = gdb_remote_write_mem_one(prv, paddr + p, &buf[p], l);
 		if (r != CL_SUCCESS) {
 			return r;
 		}
