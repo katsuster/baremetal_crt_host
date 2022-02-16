@@ -25,10 +25,16 @@ static struct _cl_device_id in_head = {
 static atomic_int in_dev_num;
 
 static struct dev_group in_dev_groups[] = {
-#ifdef CONFIG_GDB
+#ifdef CONFIG_GDB_OPENOCD
 	{
-		.init = gdb_remote_init,
-		.exit = gdb_remote_exit,
+		.init = gdb_remote_openocd_init,
+		.exit = gdb_remote_openocd_exit,
+	},
+#endif
+#ifdef CONFIG_GDB_QEMU
+	{
+		.init = gdb_remote_qemu_init,
+		.exit = gdb_remote_qemu_exit,
 	},
 #endif
 };

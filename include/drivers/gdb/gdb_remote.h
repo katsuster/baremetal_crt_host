@@ -14,7 +14,14 @@ struct gdb_remote_priv {
 	int fd_sock;
 };
 
-cl_int gdb_remote_init(cl_platform_id platform);
-cl_int gdb_remote_exit(cl_platform_id platform);
+#ifdef CONFIG_GDB_OPENOCD
+cl_int gdb_remote_openocd_init(cl_platform_id platform);
+cl_int gdb_remote_openocd_exit(cl_platform_id platform);
+#endif /* CONFIG_GDB_OPENOCD */
+
+#ifdef CONFIG_GDB_QEMU
+cl_int gdb_remote_qemu_init(cl_platform_id platform);
+cl_int gdb_remote_qemu_exit(cl_platform_id platform);
+#endif /* CONFIG_GDB_QEMU */
 
 #endif /* BAREMETAL_CRT_HOST_DRV_GDB_REMOTE */
