@@ -267,7 +267,7 @@ static cl_int enqueue_arg(cl_device_id dev, const struct kern_arg *arg, const st
 	}
 	*paddr += size_buf;
 
-	*paddr = ALIGN_OF(*paddr, 4);
+	*paddr = ALIGN_OF(*paddr, 8);
 
 	return CL_SUCCESS;
 }
@@ -335,7 +335,7 @@ static cl_int dequeue_arg(cl_device_id dev, const struct kern_arg *arg, const st
 	}
 	*paddr += size_buf;
 
-	*paddr = ALIGN_OF(*paddr, 4);
+	*paddr = ALIGN_OF(*paddr, 8);
 
 	return CL_SUCCESS;
 }
@@ -405,7 +405,7 @@ cl_int in_clEnqueueNDRangeKernel(cl_command_queue command_queue,
 	}
 
 	/* Send arguments */
-	uint64_t paddr = comm.addr + sizeof(struct __comm_area_header);
+	uint64_t paddr = comm.addr + ALIGN_OF(sizeof(struct __comm_area_header), 8);
 	struct kern_arg arg;
 
 	/* argv[0] is kernel name */
@@ -460,6 +460,7 @@ cl_int in_clEnqueueNDRangeKernel(cl_command_queue command_queue,
 		}
 
 		if (h_comm.magic != BAREMETAL_CRT_COMM_MAGIC) {
+			log_err("Magic number is broken, abort.\n");
 			return CL_INVALID_DEVICE;
 		}
 		if (h_comm.done) {
