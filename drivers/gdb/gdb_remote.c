@@ -55,6 +55,22 @@ retry:
 	return ch;
 }
 
+cl_int gdb_remote_send_interrupt(struct gdb_remote_priv *prv)
+{
+	ssize_t nsent, len = 1;
+
+	log_dbg("->\n");
+
+	/* Send ETX (end of text) */
+	nsent = send(prv->fd_sock, "\x03", len, 0);
+	if (nsent != len) {
+		log_err("failed to send interrupt.\n");
+		return CL_OUT_OF_RESOURCES;
+	}
+
+	return CL_SUCCESS;
+}
+
 cl_int gdb_remote_send(struct gdb_remote_priv *prv, const char *cmd, int ack)
 {
 	size_t cmdlen = strlen(cmd);
@@ -264,7 +280,7 @@ cl_int gdb_remote_stop(cl_device_id dev)
 
 	struct gdb_remote_priv *prv = dev->priv;
 
-	gdb_remote_send(prv, "", 0);
+	gdb_remote_send_interrupt(prv);
 
 	gdb_remote_discard_all(prv);
 
