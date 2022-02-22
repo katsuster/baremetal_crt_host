@@ -12,6 +12,7 @@
 
 #include <drivers/gdb/gdb_remote.h>
 
+#define BUFLEN    4096
 
 static int gdb_remote_getchar(struct gdb_remote_priv *prv)
 {
@@ -122,10 +123,11 @@ cl_int gdb_remote_recv(struct gdb_remote_priv *prv, char *cmd, size_t cmdlen, in
 {
 	const char *str_sum_recv;
 	int c, sum = 0, sum_recv;
+	size_t p = 0, q = 0;
+	char buf[BUFLEN];
+	cl_int r = CL_SUCCESS;
 
-	size_t buflen = cmdlen + 10, p = 0, q = 0;
-	char *buf = alloca(buflen);
-	memset(buf, 0, buflen);
+	memset(buf, 0, BUFLEN);
 
 	c = gdb_remote_getchar(prv);
 	buf[p++] = c;
@@ -142,12 +144,16 @@ cl_int gdb_remote_recv(struct gdb_remote_priv *prv, char *cmd, size_t cmdlen, in
 	while (c != '#') {
 		sum += c;
 
-		cmd[q++] = c;
+		if (q < cmdlen - 1) {
+			cmd[q++] = c;
+		} else {
+			r = CL_OUT_OF_HOST_MEMORY;
+		}
 		c = gdb_remote_getchar(prv);
 		buf[p++] = c;
 
-		if (p >= buflen || q >= cmdlen) {
-			log_err("Too long answer (len %d).\n", (int)cmdlen);
+		if (p >= BUFLEN) {
+			log_err("Too long answer (len %d).\n", BUFLEN);
 			return CL_OUT_OF_HOST_MEMORY;
 		}
 	}
@@ -176,7 +182,7 @@ cl_int gdb_remote_recv(struct gdb_remote_priv *prv, char *cmd, size_t cmdlen, in
 		gdb_remote_putchar(prv, ack_char);
 	}
 
-	return CL_SUCCESS;
+	return r;
 }
 
 cl_int gdb_remote_discard_all(struct gdb_remote_priv *prv)
@@ -274,6 +280,9 @@ cl_int gdb_remote_run(cl_device_id dev)
 
 cl_int gdb_remote_stop(cl_device_id dev)
 {
+	char tmp[4096];
+	cl_int r;
+
 	if (dev == NULL || dev->priv == NULL) {
 		return CL_INVALID_DEVICE;
 	}
@@ -281,6 +290,19 @@ cl_int gdb_remote_stop(cl_device_id dev)
 	struct gdb_remote_priv *prv = dev->priv;
 
 	gdb_remote_send_interrupt(prv);
+
+	while (1) {
+		memset(tmp, 0, sizeof(tmp));
+		r = gdb_remote_recv(prv, tmp, sizeof(tmp) - 1, 1);
+		if (r != CL_SUCCESS) {
+			return r;
+		}
+		if (tmp[0] == 'O') {
+			continue;
+		} else if (tmp[0] == 'T' || tmp[0] == 'W') {
+			break;
+		}
+	}
 
 	gdb_remote_discard_all(prv);
 
