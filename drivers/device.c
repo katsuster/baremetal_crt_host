@@ -73,6 +73,7 @@ cl_int dev_get_devices(cl_device_id *pdev, cl_device_type typ, cl_uint *sz)
 	*sz = cnt;
 
 	if (cnt == 0) {
+		log_warn("device not found.\n");
 		return CL_DEVICE_NOT_FOUND;
 	} else {
 		return CL_SUCCESS;
@@ -197,6 +198,7 @@ cl_int dev_reset(cl_device_id dev)
 		return r;
 	}
 	if (dev->ops == NULL || dev->ops->reset == NULL) {
+		log_warn("device is not implemented reset.\n");
 		return CL_INVALID_DEVICE;
 	}
 
@@ -211,6 +213,7 @@ cl_int dev_run(cl_device_id dev)
 		return r;
 	}
 	if (dev->ops == NULL || dev->ops->run == NULL) {
+		log_warn("device is not implemented run.\n");
 		return CL_INVALID_DEVICE;
 	}
 
@@ -225,6 +228,7 @@ cl_int dev_stop(cl_device_id dev)
 		return r;
 	}
 	if (dev->ops == NULL || dev->ops->stop == NULL) {
+		log_warn("device is not implemented stop.\n");
 		return CL_INVALID_DEVICE;
 	}
 
@@ -239,6 +243,7 @@ cl_int dev_read_mem(cl_device_id dev, uint64_t paddr, char *buf, uint64_t len)
 		return r;
 	}
 	if (dev->ops == NULL || dev->ops->read_mem == NULL) {
+		log_warn("device is not implemented read_mem.\n");
 		return CL_INVALID_DEVICE;
 	}
 	if (buf == NULL && len != 0) {
@@ -259,6 +264,7 @@ cl_int dev_write_mem(cl_device_id dev, uint64_t paddr, const char *buf, uint64_t
 		return r;
 	}
 	if (dev->ops == NULL || dev->ops->write_mem == NULL) {
+		log_warn("device is not implemented write_mem.\n");
 		return CL_INVALID_DEVICE;
 	}
 	if (buf == NULL && len != 0) {
