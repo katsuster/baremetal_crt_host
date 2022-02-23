@@ -47,6 +47,11 @@ static cl_int gdb_remote_openocd_reset(cl_device_id dev)
 	return CL_SUCCESS;
 }
 
+static const struct gdb_remote_conf gdb_remote_openocd_conf = {
+	.node = "localhost",
+	.service = "3333",
+};
+
 static const struct dev_ops gdb_remote_openocd_ops = {
 	.probe = gdb_remote_probe,
 	.remove = gdb_remote_remove,
@@ -59,19 +64,21 @@ static const struct dev_ops gdb_remote_openocd_ops = {
 
 cl_int gdb_remote_openocd_init(cl_platform_id platform)
 {
-	cl_uint num = 0;
+	struct gdb_remote_enum_info *inf = NULL;
 	cl_int r;
 
-	/* TODO: how to enumerate OpenOCD GDB remote I/F??? */
-	num = 1;
+	r = gdb_remote_enum(&gdb_remote_openocd_conf, &inf, &in_devs_num);
+	if (r != CL_SUCCESS) {
+		return r;
+	}
 
-	in_devs = calloc(num, sizeof(struct _cl_device_id));
+	in_devs = calloc(in_devs_num, sizeof(struct _cl_device_id));
 	if (in_devs == NULL) {
 		log_err("failed to alloc device info.\n");
 		return CL_OUT_OF_HOST_MEMORY;
 	}
 
-	for (cl_uint i = 0; i < num; i++) {
+	for (cl_uint i = 0; i < in_devs_num; i++) {
 		cl_device_id dev = NULL;
 
 		r = gdb_remote_alloc_dev(platform, &dev);
@@ -82,9 +89,8 @@ cl_int gdb_remote_openocd_init(cl_platform_id platform)
 
 		struct gdb_remote_priv *prv = dev->priv;
 
-		/* TODO: how to enumerate OpenOCD GDB remote I/F??? */
-		prv->node = "localhost";
-		prv->service = "3333";
+		prv->conf = &gdb_remote_openocd_conf;
+		prv->info = inf[i];
 
 		r = dev_add(dev);
 		if (r != CL_SUCCESS) {
@@ -93,8 +99,6 @@ cl_int gdb_remote_openocd_init(cl_platform_id platform)
 
 		in_devs[i] = dev;
 	}
-
-	in_devs_num = num;
 
 	return CL_SUCCESS;
 

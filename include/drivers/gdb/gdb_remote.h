@@ -5,15 +5,6 @@
 
 #include <type_cl.h>
 
-struct gdb_remote_priv {
-	/* Settings */
-	const char *node;
-	const char *service;
-
-	/* For runtime */
-	int fd_sock;
-};
-
 #ifdef CONFIG_GDB_OPENOCD
 cl_int gdb_remote_openocd_init(cl_platform_id platform);
 cl_int gdb_remote_openocd_exit(cl_platform_id platform);

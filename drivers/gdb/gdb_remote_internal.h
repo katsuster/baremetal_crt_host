@@ -7,10 +7,19 @@
 
 #include <drivers/gdb/gdb_remote.h>
 
-struct gdb_remote_priv {
-	/* Settings */
+struct gdb_remote_conf {
 	const char *node;
 	const char *service;
+};
+
+struct gdb_remote_enum_info {
+	const char *node;
+	const char *service;
+};
+
+struct gdb_remote_priv {
+	const struct gdb_remote_conf *conf;
+	struct gdb_remote_enum_info info;
 
 	/* For runtime */
 	int fd_sock;
@@ -20,6 +29,8 @@ cl_int gdb_remote_send_interrupt(struct gdb_remote_priv *prv);
 cl_int gdb_remote_send(struct gdb_remote_priv *prv, const char *cmd, int ack);
 cl_int gdb_remote_recv(struct gdb_remote_priv *prv, char *cmd, size_t cmdlen, int ack);
 cl_int gdb_remote_discard_all(struct gdb_remote_priv *prv);
+
+cl_int gdb_remote_enum(const struct gdb_remote_conf *conf, struct gdb_remote_enum_info **inf, cl_uint *num);
 cl_int gdb_remote_probe(cl_device_id dev);
 cl_int gdb_remote_remove(cl_device_id dev);
 cl_int gdb_remote_run(cl_device_id dev);

@@ -202,6 +202,36 @@ cl_int gdb_remote_discard_all(struct gdb_remote_priv *prv)
 	return CL_SUCCESS;
 }
 
+cl_int gdb_remote_enum(const struct gdb_remote_conf *conf, struct gdb_remote_enum_info **inf, cl_uint *num)
+{
+	struct gdb_remote_enum_info *reminf = NULL;
+	cl_uint num_rem = 1;
+	cl_int r = CL_SUCCESS;
+
+	if (conf == NULL || inf == NULL || num == NULL) {
+		return CL_INVALID_VALUE;
+	}
+
+	reminf = calloc(num_rem, sizeof(struct gdb_remote_enum_info));
+	if (reminf == NULL) {
+		log_err("failed to alloc gdb_remote info array.\n");
+		r = CL_OUT_OF_HOST_MEMORY;
+		goto err_out;
+	}
+
+	/* TODO: how to enumerate GDB remote I/F??? */
+	reminf[0].node = conf->node;
+	reminf[0].service = conf->service;
+
+	*inf = reminf;
+	*num = num_rem;
+
+	return CL_SUCCESS;
+
+err_out:
+	return r;
+}
+
 cl_int gdb_remote_probe(cl_device_id dev)
 {
 	struct addrinfo hints, *ai;
@@ -219,7 +249,7 @@ cl_int gdb_remote_probe(cl_device_id dev)
 	hints.ai_flags = 0;
 	hints.ai_addr = NULL;
 	hints.ai_next = NULL;
-	r = getaddrinfo(prv->node, prv->service, &hints, &ai);
+	r = getaddrinfo(prv->info.node, prv->info.service, &hints, &ai);
 	if (r) {
 		log_err("failed to alloc addrinfo.\n");
 		return CL_OUT_OF_HOST_MEMORY;
@@ -233,7 +263,8 @@ cl_int gdb_remote_probe(cl_device_id dev)
 
 	r = connect(prv->fd_sock, ai->ai_addr, ai->ai_addrlen);
 	if (r != 0) {
-		log_err("failed to connect to '%s:%s'.\n", prv->node, prv->service);
+		log_err("failed to connect to '%s:%s'.\n",
+			prv->info.node, prv->info.service);
 		return CL_OUT_OF_HOST_MEMORY;
 	}
 
