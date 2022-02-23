@@ -7,6 +7,10 @@
 #include <drivers/platform.h>
 #include <drivers/device.h>
 
+#define KB    (1024)
+#define MB    (1024 * 1024)
+#define GB    (1024 * 1024 * 1024ULL)
+
 #define NMAX(a, b)     (((a) > (b)) ? (a) : (b))
 #define NMIN(a, b)     (((a) < (b)) ? (a) : (b))
 #define ARRAY_OF(x)    (sizeof(x) / sizeof((x)[0]))
