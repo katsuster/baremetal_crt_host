@@ -253,9 +253,6 @@ cl_int gdb_remote_remove(cl_device_id dev)
 
 	close(prv->fd_sock);
 
-	free(prv);
-	dev->priv = NULL;
-
 	return CL_SUCCESS;
 }
 
@@ -514,6 +511,7 @@ cl_int gdb_remote_free_dev(cl_device_id dev)
 
 	if (dev->priv != NULL) {
 		free(dev->priv);
+		dev->priv = NULL;
 	}
 
 	r = dev_free(dev);
