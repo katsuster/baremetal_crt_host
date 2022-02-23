@@ -11,6 +11,7 @@
 #include <unistd.h>
 
 #include <drivers/gdb/gdb_remote.h>
+#include "gdb_remote_internal.h"
 
 #define BUFLEN    4096
 

@@ -7,6 +7,15 @@
 
 #include <drivers/gdb/gdb_remote.h>
 
+struct gdb_remote_priv {
+	/* Settings */
+	const char *node;
+	const char *service;
+
+	/* For runtime */
+	int fd_sock;
+};
+
 cl_int gdb_remote_send_interrupt(struct gdb_remote_priv *prv);
 cl_int gdb_remote_send(struct gdb_remote_priv *prv, const char *cmd, int ack);
 cl_int gdb_remote_recv(struct gdb_remote_priv *prv, char *cmd, size_t cmdlen, int ack);
