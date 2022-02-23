@@ -10,6 +10,7 @@
 struct gdb_remote_conf {
 	const char *node;
 	const char *service;
+	const struct dev_ops *ops;
 };
 
 struct gdb_remote_enum_info {
@@ -39,5 +40,7 @@ cl_int gdb_remote_read_mem(cl_device_id dev, uint64_t paddr, char *buf, uint64_t
 cl_int gdb_remote_write_mem(cl_device_id dev, uint64_t paddr, const char *buf, uint64_t len);
 cl_int gdb_remote_alloc_dev(cl_platform_id platform, cl_device_id *pdev);
 cl_int gdb_remote_free_dev(cl_device_id dev);
+cl_int gdb_remote_init(cl_platform_id platform, const struct gdb_remote_conf *conf, cl_device_id **devs, cl_uint *devs_num);
+cl_int gdb_remote_exit(cl_platform_id platform, cl_device_id **devs, cl_uint *devs_num);
 
 #endif /* BAREMETAL_CRT_HOST_DRV_GDB_REMOTE_INTERNAL */

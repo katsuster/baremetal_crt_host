@@ -554,3 +554,92 @@ cl_int gdb_remote_free_dev(cl_device_id dev)
 
 	return res;
 }
+
+cl_int gdb_remote_init(cl_platform_id platform, const struct gdb_remote_conf *conf, cl_device_id **devs, cl_uint *devs_num)
+{
+	struct gdb_remote_enum_info *inf = NULL;
+	cl_int r;
+
+	if (conf == NULL || devs == NULL || devs_num == NULL) {
+		return CL_INVALID_VALUE;
+	}
+
+	*devs = NULL;
+	*devs_num = 0;
+
+	r = gdb_remote_enum(conf, &inf, devs_num);
+	if (r != CL_SUCCESS) {
+		return r;
+	}
+
+	*devs = calloc(*devs_num, sizeof(struct _cl_device_id));
+	if (*devs == NULL) {
+		log_err("failed to alloc device info.\n");
+		return CL_OUT_OF_HOST_MEMORY;
+	}
+
+	for (cl_uint i = 0; i < *devs_num; i++) {
+		cl_device_id dev = NULL;
+
+		r = gdb_remote_alloc_dev(platform, &dev);
+		if (r != CL_SUCCESS) {
+			goto err_out;
+		}
+		dev->ops = conf->ops;
+
+		struct gdb_remote_priv *prv = dev->priv;
+
+		prv->conf = conf;
+		prv->info = inf[i];
+
+		r = dev_add(dev);
+		if (r != CL_SUCCESS) {
+			goto err_out;
+		}
+
+		(*devs)[i] = dev;
+	}
+
+	return CL_SUCCESS;
+
+err_out:
+	*devs = NULL;
+	*devs_num = 0;
+
+	if (inf != NULL) {
+		free(inf);
+	}
+
+	gdb_remote_exit(platform, devs, devs_num);
+
+	return r;
+}
+
+cl_int gdb_remote_exit(cl_platform_id platform, cl_device_id **devs, cl_uint *devs_num)
+{
+	cl_int r;
+
+	if (devs == NULL || devs_num == NULL) {
+		return CL_INVALID_VALUE;
+	}
+
+	for (cl_uint i = 0; i < *devs_num; i++) {
+		cl_device_id dev = (*devs)[i];
+
+		r = dev_remove(dev);
+		if (r != CL_SUCCESS) {
+			// Ignore error
+		}
+
+		r = gdb_remote_free_dev(dev);
+		if (r != CL_SUCCESS) {
+			// Ignore error
+		}
+	}
+
+	free(*devs);
+	*devs = NULL;
+	*devs_num = 0;
+
+	return CL_SUCCESS;
+}
