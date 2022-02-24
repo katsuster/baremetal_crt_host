@@ -14,7 +14,7 @@ VECADD_OBJS = vecadd.o
 all: $(BINS)
 
 vecadd: $(VECADD_OBJS)
-	$(CC) $(LDFLAGS) $< $(LDADD) -o $@
+	$(CC) $(LDFLAGS) $^ $(LDADD) -o $@
 
 clean:
 	rm -f $(BINS) $(VECADD_OBJS)
