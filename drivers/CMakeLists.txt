@@ -12,3 +12,4 @@ prj_sources(
   )
 
 add_subdirectory_ifdef(CONFIG_GDB gdb)
+add_subdirectory_ifdef(CONFIG_PCI pci)

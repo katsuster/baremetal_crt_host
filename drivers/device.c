@@ -11,6 +11,9 @@
 #ifdef CONFIG_GDB
 #include <drivers/gdb/gdb_remote.h>
 #endif
+#ifdef CONFIG_PCI
+#include <drivers/pci/pci_sysfs.h>
+#endif
 
 struct dev_group {
 	cl_int (*init)(cl_platform_id platform);
@@ -35,6 +38,12 @@ static struct dev_group in_dev_groups[] = {
 	{
 		.init = gdb_remote_qemu_init,
 		.exit = gdb_remote_qemu_exit,
+	},
+#endif
+#ifdef CONFIG_PCI_SYSFS_TEST
+	{
+		.init = pci_sysfs_test_init,
+		.exit = pci_sysfs_test_exit,
 	},
 #endif
 };

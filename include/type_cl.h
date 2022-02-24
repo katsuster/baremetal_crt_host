@@ -16,6 +16,8 @@
 #define ARRAY_OF(x)    (sizeof(x) / sizeof((x)[0]))
 #define ALIGN_OF(x, align)    (((x) % (align) == 0) ? (x) : ((x) / (align) + 1) * (align))
 
+#define BIT(x)    (1UL << x)
+
 #define LOG_LV_DBG     10
 #define LOG_LV_INFO    20
 #define LOG_LV_WARN    30
