@@ -409,6 +409,10 @@ static cl_int prg_elf_read_ph(struct elf_info *elf)
 		struct program_chunk chunk;
 		const uint8_t *src = elf->buf + prg->p_offset;
 
+		if (prg->p_type != PT_LOAD) {
+			continue;
+		}
+
 		prg->index = i;
 		prg->src = src;
 
