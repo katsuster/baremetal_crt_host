@@ -56,17 +56,6 @@ int main(int argc, char *argv[])
 	cl_mem d_a, d_b;
 	cl_mem d_c;
 
-	// Allocate memory for each vector on host
-	double *h_a = (double *)malloc(bytes);
-	double *h_b = (double *)malloc(bytes);
-	double *h_c = (double *)malloc(bytes);
-
-	// Initialize vectors on host
-	for (int i = 0; i < n; i++) {
-		h_a[i] = sinf(i) * sinf(i);
-		h_b[i] = cosf(i) * cosf(i);
-	}
-
 	// Number of work items in each local work group
 	size_t localSize = 64;
 
@@ -182,18 +171,6 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	// Write our data set into the input array in device memory
-	err = clEnqueueWriteBuffer(queue, d_a, CL_TRUE, 0, bytes, h_a, 0, NULL, NULL);
-	if (err != CL_SUCCESS) {
-		printf("%s:%d err:%d\n", __func__, __LINE__, err);
-		return 0;
-	}
-	err = clEnqueueWriteBuffer(queue, d_b, CL_TRUE, 0, bytes, h_b, 0, NULL, NULL);
-	if (err != CL_SUCCESS) {
-		printf("%s:%d err:%d\n", __func__, __LINE__, err);
-		return 0;
-	}
-
 	// Set the arguments to our compute kernel
 	err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &d_a);
 	if (err != CL_SUCCESS) {
@@ -216,33 +193,62 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	// Execute the kernel over the entire range of the data set
-	err = clEnqueueNDRangeKernel(queue, kernel, 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
-	if (err != CL_SUCCESS) {
-		printf("%s:%d err:%d\n", __func__, __LINE__, err);
-		return 0;
-	}
+	for (int j = 0; j < 5; j++) {
+		// Allocate memory for each vector on host
+		double *h_a = (double *)malloc(bytes);
+		double *h_b = (double *)malloc(bytes);
+		double *h_c = (double *)malloc(bytes);
 
-	// Wait for the command queue to get serviced before reading back results
-	err = clFinish(queue);
-	if (err != CL_SUCCESS) {
-		printf("%s:%d err:%d\n", __func__, __LINE__, err);
-		return 0;
-	}
+		// Initialize vectors on host
+		for (int i = 0; i < n; i++) {
+			h_a[i] = sinf(i) * sinf(i) + j;
+			h_b[i] = cosf(i) * cosf(i) + j;
+		}
 
-	// Read the results from the device
-	err = clEnqueueReadBuffer(queue, d_c, CL_TRUE, 0, bytes, h_c, 0, NULL, NULL);
-	if (err != CL_SUCCESS) {
-		printf("%s:%d err:%d\n", __func__, __LINE__, err);
-		return 0;
-	}
+		// Write our data set into the input array in device memory
+		err = clEnqueueWriteBuffer(queue, d_a, CL_TRUE, 0, bytes, h_a, 0, NULL, NULL);
+		if (err != CL_SUCCESS) {
+			printf("%s:%d err:%d\n", __func__, __LINE__, err);
+			return 0;
+		}
+		err = clEnqueueWriteBuffer(queue, d_b, CL_TRUE, 0, bytes, h_b, 0, NULL, NULL);
+		if (err != CL_SUCCESS) {
+			printf("%s:%d err:%d\n", __func__, __LINE__, err);
+			return 0;
+		}
 
-	//Sum up vector c and print result divided by n, this should equal 1 within error
-	double sum = 0;
-	for (int i = 0; i < n; i++) {
-		sum += h_c[i];
+		// Execute the kernel over the entire range of the data set
+		err = clEnqueueNDRangeKernel(queue, kernel, 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
+		if (err != CL_SUCCESS) {
+			printf("%s:%d err:%d\n", __func__, __LINE__, err);
+			return 0;
+		}
+
+		// Wait for the command queue to get serviced before reading back results
+		err = clFinish(queue);
+		if (err != CL_SUCCESS) {
+			printf("%s:%d err:%d\n", __func__, __LINE__, err);
+			return 0;
+		}
+
+		// Read the results from the device
+		err = clEnqueueReadBuffer(queue, d_c, CL_TRUE, 0, bytes, h_c, 0, NULL, NULL);
+		if (err != CL_SUCCESS) {
+			printf("%s:%d err:%d\n", __func__, __LINE__, err);
+			return 0;
+		}
+
+		//Sum up vector c and print result divided by n, this should equal 1 within error
+		double sum = 0;
+		for (int i = 0; i < n; i++) {
+			sum += h_c[i];
+		}
+		printf("final result: %f\n", sum / n);
+
+		free(h_a);
+		free(h_b);
+		free(h_c);
 	}
-	printf("final result: %f\n", sum / n);
 
 	clReleaseMemObject(d_a);
 	clReleaseMemObject(d_b);
@@ -251,10 +257,6 @@ int main(int argc, char *argv[])
 	clReleaseKernel(kernel);
 	clReleaseCommandQueue(queue);
 	clReleaseContext(context);
-
-	free(h_a);
-	free(h_b);
-	free(h_c);
 
 	return 0;
 }
