@@ -32,10 +32,7 @@ cl_kernel in_clCreateKernel(cl_program program,
 		goto err_out;
 	}
 
-	/* TODO: how to get number of args of program?? */
-	int n = 8;
-
-	r = kern_set_num_args(kern, n);
+	r = kern_set_num_args(kern, 0);
 	if (r != CL_SUCCESS) {
 		goto err_out;
 	}
@@ -91,6 +88,7 @@ cl_int in_clSetKernelArg(cl_kernel  kernel,
 			 size_t     arg_size,
 			 const void *arg_value)
 {
+	cl_uint num;
 	cl_int r;
 
 	if (arg_value == NULL) {
@@ -116,6 +114,17 @@ cl_int in_clSetKernelArg(cl_kernel  kernel,
 		arg.argtype = __COMM_ARG_VAL;
 		arg.size = arg_size;
 		arg.val = arg_value;
+	}
+
+	r = kern_get_num_args(kernel, &num);
+	if (r != CL_SUCCESS) {
+		return r;
+	}
+	if (num <= arg_index) {
+		r = kern_set_num_args(kernel, arg_index + 1);
+		if (r != CL_SUCCESS) {
+			return r;
+		}
 	}
 
 	r = kern_set_arg(kernel, arg_index, &arg);

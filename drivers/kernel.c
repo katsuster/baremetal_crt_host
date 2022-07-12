@@ -129,22 +129,41 @@ cl_int kern_get_num_args(cl_kernel kern, cl_uint *num)
 
 cl_int kern_set_num_args(cl_kernel kern, cl_uint num)
 {
+	struct kern_arg *args;
 	cl_int r;
 
 	if ((r = kern_is_valid(kern)) != CL_SUCCESS) {
 		return r;
 	}
 
-	if (kern->args != NULL) {
-		free(kern->args);
+	if (num == 0) {
+		if (kern->args != NULL) {
+			free(kern->args);
+		}
+
 		kern->args = NULL;
+		kern->num_args = 0;
+
+		return CL_SUCCESS;
 	}
 
-	kern->args = calloc(num, sizeof(struct kern_arg));
-	if (kern->args == NULL) {
+	args = calloc(num, sizeof(struct kern_arg));
+	if (args == NULL) {
 		log_err("Failed to alloc kern_arg.\n");
 		return CL_OUT_OF_HOST_MEMORY;
 	}
+
+	if (kern->args != NULL) {
+		cl_uint n = NMIN(kern->num_args, num);
+		printf("n:%d\n", n);
+		for (cl_uint i = 0; i < n; i++) {
+		printf("i:%d %p %p\n", i, args[i].val, kern->args[i].val);
+			args[i] = kern->args[i];
+		}
+		free(kern->args);
+	}
+
+	kern->args = args;
 	kern->num_args = num;
 
 	return CL_SUCCESS;

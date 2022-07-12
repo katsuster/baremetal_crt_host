@@ -393,8 +393,9 @@ cl_int in_clEnqueueNDRangeKernel(cl_command_queue command_queue,
 	struct __comm_area_header h_comm;
 	size_t sz;
 
+	/* argv[0] is for kernel name */
 	h_comm.magic = BAREMETAL_CRT_COMM_MAGIC;
-	h_comm.num_args = num_args;
+	h_comm.num_args = num_args + 1;
 	h_comm.done = 0;
 	h_comm.ret_main = 0;
 
