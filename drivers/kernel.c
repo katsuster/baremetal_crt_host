@@ -155,9 +155,7 @@ cl_int kern_set_num_args(cl_kernel kern, cl_uint num)
 
 	if (kern->args != NULL) {
 		cl_uint n = NMIN(kern->num_args, num);
-		printf("n:%d\n", n);
 		for (cl_uint i = 0; i < n; i++) {
-		printf("i:%d %p %p\n", i, args[i].val, kern->args[i].val);
 			args[i] = kern->args[i];
 		}
 		free(kern->args);
