@@ -206,10 +206,8 @@ static cl_int enqueue_arg(cl_device_id dev, const struct kern_arg *arg, const st
 
 	switch (arg->argtype) {
 	case __COMM_ARG_NOTUSED:
-		ptr = NULL;
-		size_buf = 0;
-
-		break;
+		log_err("kernel has incomplete arguments.\n");
+		return CL_INVALID_KERNEL;
 	case __COMM_ARG_VAL:
 		/* Direct value */
 		ptr = arg->val;
@@ -282,10 +280,8 @@ static cl_int dequeue_arg(cl_device_id dev, const struct kern_arg *arg, const st
 
 	switch (arg->argtype) {
 	case __COMM_ARG_NOTUSED:
-		ptr = NULL;
-		size_buf = 0;
-
-		break;
+		log_err("kernel has incomplete arguments.\n");
+		return CL_INVALID_KERNEL;
 	case __COMM_ARG_VAL:
 		/* Direct value cannot be change by the kernel */
 		ptr = NULL;
@@ -428,6 +424,7 @@ cl_int in_clEnqueueNDRangeKernel(cl_command_queue command_queue,
 
 		r = enqueue_arg(dev, &arg, &comm, &paddr);
 		if (r != CL_SUCCESS) {
+			log_err("cannot enqueue arg index:%d.\n", i);
 			return r;
 		}
 	}
