@@ -353,6 +353,12 @@ cl_int in_clEnqueueNDRangeKernel(cl_command_queue command_queue,
 	int num_chunks;
 	cl_int r;
 
+	/* Reset and Halt */
+	r = dev_reset(dev);
+	if (r != CL_SUCCESS) {
+		return r;
+	}
+
 	/* Send text/data areas */
 	r = prg_get_num_chunks(prg, &num_chunks);
 	if (r != CL_SUCCESS) {
@@ -430,11 +436,6 @@ cl_int in_clEnqueueNDRangeKernel(cl_command_queue command_queue,
 	}
 
 	/* Exec */
-	r = dev_reset(dev);
-	if (r != CL_SUCCESS) {
-		return r;
-	}
-
 	r = dev_run(dev);
 	if (r != CL_SUCCESS) {
 		return r;
