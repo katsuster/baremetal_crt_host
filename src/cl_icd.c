@@ -6,7 +6,7 @@
 #include <in_cl.h>
 
 /* for log_xxx() functions */
-int __log_lv = LOG_LV_DBG;
+int __log_lv = LOG_LV_INFO;
 
 cl_int clGetPlatformIDs(cl_uint        num_entries,
 			cl_platform_id *platforms,
