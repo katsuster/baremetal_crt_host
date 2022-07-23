@@ -8,15 +8,19 @@ CFLAGS   = $(CMNFLAGS)
 LDFLAGS  = $(CMNFLAGS)
 LDADD    = -lOpenCL -lm
 
-BINS = vecadd
+BINS = vecadd vecaddf
 VECADD_OBJS = vecadd.o
+VECADDF_OBJS = vecaddf.o
+OBJS = $(VECADD_OBJS) $(VECADDF_OBJS)
 
 all: $(BINS)
 
 vecadd: $(VECADD_OBJS)
 	$(CC) $(LDFLAGS) $^ $(LDADD) -o $@
+vecaddf: $(VECADDF_OBJS)
+	$(CC) $(LDFLAGS) $^ $(LDADD) -o $@
 
 clean:
-	rm -f $(BINS) $(VECADD_OBJS)
+	rm -f $(BINS) $(OBJS)
 
 .PHONY: all install clean distclean
