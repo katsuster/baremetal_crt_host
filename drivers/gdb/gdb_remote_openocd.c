@@ -18,6 +18,7 @@ static cl_uint in_devs_num;
 
 static cl_int gdb_remote_openocd_reset(cl_device_id dev)
 {
+	const char *cmd = "qRcmd,72657365742068616c74";
 	char tmp[4096];
 	cl_int r;
 
@@ -28,7 +29,7 @@ static cl_int gdb_remote_openocd_reset(cl_device_id dev)
 	struct gdb_remote_priv *prv = dev->priv;
 
 	// monitor reset halt
-	r = gdb_remote_send(prv, "qRcmd,72657365742068616c74", 1);
+	r = gdb_remote_send(prv, cmd, strlen(cmd), 1);
 	if (r != CL_SUCCESS) {
 		return r;
 	}
@@ -54,7 +55,7 @@ static const struct dev_ops gdb_remote_openocd_ops = {
 	.run = gdb_remote_run,
 	.stop = gdb_remote_stop,
 	.read_mem = gdb_remote_read_mem,
-	.write_mem = gdb_remote_write_mem,
+	.write_mem = gdb_remote_write_bin
 };
 
 static const struct gdb_remote_conf gdb_remote_openocd_conf = {

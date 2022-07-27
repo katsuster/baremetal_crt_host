@@ -18,6 +18,7 @@ static cl_uint in_devs_num;
 
 static cl_int gdb_remote_qemu_reset(cl_device_id dev)
 {
+	const char *cmd = "qRcmd,73797374656d5f7265736574";
 	char tmp[4];
 	cl_int r;
 
@@ -28,7 +29,7 @@ static cl_int gdb_remote_qemu_reset(cl_device_id dev)
 	struct gdb_remote_priv *prv = dev->priv;
 
 	// monitor system_reset
-	r = gdb_remote_send(prv, "qRcmd,73797374656d5f7265736574", 1);
+	r = gdb_remote_send(prv, cmd, strlen(cmd), 1);
 	if (r != CL_SUCCESS) {
 		return r;
 	}

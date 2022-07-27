@@ -73,31 +73,59 @@ cl_int gdb_remote_send_interrupt(struct gdb_remote_priv *prv)
 	return CL_SUCCESS;
 }
 
-cl_int gdb_remote_send(struct gdb_remote_priv *prv, const char *cmd, int ack)
+cl_int gdb_remote_send(struct gdb_remote_priv *prv, const char *cmd, size_t cmdlen, int ack)
 {
-	size_t cmdlen = strlen(cmd);
-	size_t buflen = cmdlen + 10;
+	size_t buflen = cmdlen * 2 + 10;
+	size_t pos = 0, n;
 	char *buf = alloca(buflen);
+	char sum = 0;
+	char tmp[10];
 	ssize_t nsent;
 
 	memset(buf, 0, buflen);
 
-	char sum = 0;
+	strcat(buf, "$");
+	pos += 1;
+
 	for (size_t i = 0; i < cmdlen; i++) {
-		sum += cmd[i];
+		switch (cmd[i]) {
+		case '#':
+		case '$':
+		case '}':
+		case '*':
+			buf[pos] = '}';
+			buf[pos + 1] = cmd[i] ^ 0x20;
+			pos += 2;
+			sum += '}';
+			sum += cmd[i] ^ 0x20;
+			break;
+		default:
+			buf[pos] = cmd[i];
+			pos += 1;
+			sum += cmd[i];
+			break;
+		}
+		if (i >= buflen) {
+			log_err("buflen is too short.\n");
+			return CL_OUT_OF_HOST_MEMORY;
+		}
 	}
 
-	int len = snprintf(buf, buflen, "$%s#%02x", cmd, sum & 0xff);
+	int len = snprintf(tmp, sizeof(tmp) - 1, "#%02x", sum & 0xff);
 	if (len < 0) {
 		log_err("failed to snprintf.\n");
 		return CL_OUT_OF_HOST_MEMORY;
 	}
 
+	n = strlen(tmp);
+	memcpy(buf + pos, tmp, n);
+	pos += n;
+
 	log_dbg("-> %s\n", buf);
 
 resend:
-	nsent = send(prv->fd_sock, buf, len, 0);
-	if (nsent != len) {
+	nsent = send(prv->fd_sock, buf, pos, 0);
+	if (nsent != pos) {
 		log_err("failed to send data.\n");
 		return CL_OUT_OF_RESOURCES;
 	}
@@ -188,10 +216,12 @@ cl_int gdb_remote_recv(struct gdb_remote_priv *prv, char *cmd, size_t cmdlen, in
 
 cl_int gdb_remote_discard_all(struct gdb_remote_priv *prv)
 {
+	const char *cmd = "vMustReplyEmpty";
+
 	/* Discard old replies */
 	char tmpbuf[4096];
 
-	gdb_remote_send(prv, "vMustReplyEmpty", 0);
+	gdb_remote_send(prv, cmd, strlen(cmd), 0);
 	while (1) {
 		gdb_remote_recv(prv, tmpbuf, sizeof(tmpbuf), 1);
 		if (strcmp(tmpbuf, "") == 0) {
@@ -290,6 +320,7 @@ cl_int gdb_remote_remove(cl_device_id dev)
 
 cl_int gdb_remote_run(cl_device_id dev)
 {
+	const char *cmd = "vCont;c";
 	cl_int r;
 
 	if (dev == NULL || dev->priv == NULL) {
@@ -299,7 +330,7 @@ cl_int gdb_remote_run(cl_device_id dev)
 	struct gdb_remote_priv *prv = dev->priv;
 
 	// continue
-	r = gdb_remote_send(prv, "vCont;c", 0);
+	r = gdb_remote_send(prv, cmd, strlen(cmd), 0);
 	if (r != CL_SUCCESS) {
 		return r;
 	}
@@ -353,7 +384,7 @@ static cl_int gdb_remote_read_mem_one(struct gdb_remote_priv *prv, uint64_t padd
 
 	snprintf(cmd, sizeof(cmd), "m%08" PRIx64 ",%" PRIx64, paddr, len);
 
-	r = gdb_remote_send(prv, cmd, 1);
+	r = gdb_remote_send(prv, cmd, strlen(cmd), 1);
 	if (r != CL_SUCCESS) {
 		return r;
 	}
@@ -456,7 +487,7 @@ static cl_int gdb_remote_write_mem_one(struct gdb_remote_priv *prv, uint64_t pad
 		buflen -= 2;
 	}
 
-	r = gdb_remote_send(prv, strbuf, 1);
+	r = gdb_remote_send(prv, strbuf, strlen(strbuf), 1);
 	if (r != CL_SUCCESS) {
 		goto err_out;
 	}
@@ -499,6 +530,86 @@ cl_int gdb_remote_write_mem(cl_device_id dev, uint64_t paddr, const char *buf, u
 		uint64_t l = NMIN(len - p, 0x7f0);
 
 		r = gdb_remote_write_mem_one(prv, paddr + p, &buf[p], l);
+		if (r != CL_SUCCESS) {
+			return r;
+		}
+
+		p += l;
+	}
+
+	return CL_SUCCESS;
+}
+
+static cl_int gdb_remote_write_bin_one(struct gdb_remote_priv *prv, uint64_t paddr, const char *buf, uint64_t len)
+{
+	char *strbuf = NULL;
+	char tmp[4];
+	size_t buflen = len + 64;
+	size_t pos = 0;
+	cl_int r = CL_SUCCESS;
+	int n;
+
+	if (len > 0x7f0) {
+		log_err("Too large to write len:%" PRId64 ".\n", len);
+		return CL_INVALID_VALUE;
+	}
+
+	strbuf = calloc(buflen, sizeof(char));
+	if (strbuf == NULL) {
+		log_err("Failed to calloc string buf.\n");
+		return CL_OUT_OF_HOST_MEMORY;
+	}
+
+	n = snprintf(strbuf, buflen - pos, "X%08" PRIx64 ",%" PRIx64 ":", paddr, len);
+	pos += n;
+
+	memcpy(strbuf + pos, buf, len);
+	pos += len;
+
+	r = gdb_remote_send(prv, strbuf, pos, 1);
+	if (r != CL_SUCCESS) {
+		goto err_out;
+	}
+
+	free(strbuf);
+	strbuf = NULL;
+
+	memset(tmp, 0, sizeof(tmp));
+	r = gdb_remote_recv(prv, tmp, sizeof(tmp) - 1, 1);
+	if (r != CL_SUCCESS) {
+		goto err_out;
+	}
+	if (strcmp(tmp, "OK") != 0) {
+		log_err("Failed to memory write @%08" PRIx64 ".\n", paddr);
+		r = CL_INVALID_DEVICE;
+		goto err_out;
+	}
+
+err_out:
+	if (strbuf != NULL) {
+		free(strbuf);
+		strbuf = NULL;
+	}
+
+	return CL_SUCCESS;
+}
+
+
+cl_int gdb_remote_write_bin(cl_device_id dev, uint64_t paddr, const char *buf, uint64_t len)
+{
+	uint64_t p = 0;
+	cl_int r;
+
+	if (dev == NULL || dev->priv == NULL) {
+		return CL_INVALID_DEVICE;
+	}
+
+	struct gdb_remote_priv *prv = dev->priv;
+
+	while (p < len) {
+		uint64_t l = NMIN(len - p, 0x7f0);
+
+		r = gdb_remote_write_bin_one(prv, paddr + p, &buf[p], l);
 		if (r != CL_SUCCESS) {
 			return r;
 		}
