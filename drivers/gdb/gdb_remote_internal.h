@@ -7,6 +7,11 @@
 
 #include <drivers/gdb/gdb_remote.h>
 
+#define ENV_GDB_REMOTE_OPENOCD_HOST    "GDB_REMOTE_OPENOCD_HOST"
+#define ENV_GDB_REMOTE_OPENOCD_PORT    "GDB_REMOTE_OPENOCD_PORT"
+#define ENV_GDB_REMOTE_QEMU_HOST       "GDB_REMOTE_QEMU_HOST"
+#define ENV_GDB_REMOTE_QEMU_PORT       "GDB_REMOTE_QEMU_PORT"
+
 struct gdb_remote_conf {
 	const char *node;
 	const char *service;

@@ -57,7 +57,7 @@ static const struct dev_ops gdb_remote_qemu_ops = {
 	.write_mem = gdb_remote_write_mem,
 };
 
-static const struct gdb_remote_conf gdb_remote_qemu_conf = {
+static struct gdb_remote_conf gdb_remote_qemu_conf = {
 	.node = "localhost",
 	.service = "1234",
 	.ops = &gdb_remote_qemu_ops,
@@ -65,7 +65,20 @@ static const struct gdb_remote_conf gdb_remote_qemu_conf = {
 
 cl_int gdb_remote_qemu_init(cl_platform_id platform)
 {
-	return gdb_remote_init(platform, &gdb_remote_qemu_conf, &in_devs, &in_devs_num);
+	struct gdb_remote_conf *conf = &gdb_remote_qemu_conf;
+	const char *e;
+
+	e = getenv(ENV_GDB_REMOTE_QEMU_HOST);
+	if (e) {
+		conf->node = e;
+	}
+
+	e = getenv(ENV_GDB_REMOTE_QEMU_PORT);
+	if (e) {
+		conf->service = e;
+	}
+
+	return gdb_remote_init(platform, conf, &in_devs, &in_devs_num);
 }
 
 cl_int gdb_remote_qemu_exit(cl_platform_id platform)

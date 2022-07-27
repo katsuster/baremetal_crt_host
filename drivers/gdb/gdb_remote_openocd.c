@@ -58,7 +58,7 @@ static const struct dev_ops gdb_remote_openocd_ops = {
 	.write_mem = gdb_remote_write_bin
 };
 
-static const struct gdb_remote_conf gdb_remote_openocd_conf = {
+static struct gdb_remote_conf gdb_remote_openocd_conf = {
 	.node = "localhost",
 	.service = "3333",
 	.ops = &gdb_remote_openocd_ops,
@@ -66,7 +66,20 @@ static const struct gdb_remote_conf gdb_remote_openocd_conf = {
 
 cl_int gdb_remote_openocd_init(cl_platform_id platform)
 {
-	return gdb_remote_init(platform, &gdb_remote_openocd_conf, &in_devs, &in_devs_num);
+	struct gdb_remote_conf *conf = &gdb_remote_openocd_conf;
+	const char *e;
+
+	e = getenv(ENV_GDB_REMOTE_OPENOCD_HOST);
+	if (e) {
+		conf->node = e;
+	}
+
+	e = getenv(ENV_GDB_REMOTE_OPENOCD_PORT);
+	if (e) {
+		conf->service = e;
+	}
+
+	return gdb_remote_init(platform, conf, &in_devs, &in_devs_num);
 }
 
 cl_int gdb_remote_openocd_exit(cl_platform_id platform)
