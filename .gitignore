@@ -1,0 +1,5 @@
+*.o
+
+# test applications
+/test/vecadd
+/test/vecaddf
