@@ -1,0 +1,26 @@
+
+= Configure and Settings
+
+== Environment variables
+
+GDB_REMOTE_QEMU_HOST::
+  * Specify host address or name of QEMU debug interface.
+    If not defined, use default value "localhost".
+GDB_REMOTE_QEMU_PORT::
+  * Specify port number or name of QEMU debug interface.
+    If not defined, use default value "1234".
+GDB_REMOTE_OPENOCD_HOST::
+  * Specify host address or name of OpenOCD GDB interface.
+    If not defined, use default value "localhost".
+GDB_REMOTE_OPENOCD_PORT::
+  * Specify port number or name of OpenOCD GDB interface.
+    If not defined, use default value "3333".
+
+
+== Environment variables (other libraries)
+
+For OpenCL ICD (Installable Client Driver) loader.
+Official documentation is https://github.com/KhronosGroup/OpenCL-ICD-Loader/blob/main/README.md.
+
+OCL_ICD_VENDORS::
+  * Specify the path of OpenCL ICD.

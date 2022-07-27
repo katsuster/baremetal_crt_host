@@ -1,0 +1,49 @@
+
+= Build and Install
+
+== Prerequisites
+
+OS::
+  * Debian Testing
+  * Ubuntu 20.04 LTS
+Headers::
+  * OpenCL C headers (Ubuntu: opencl-c-headers)
+Libraries::
+  * OpenCL ICD loader (Ubuntu: ocl-icd-opencl-dev)
+Tools::
+  * CMake, Ninja
+
+
+== Build runtime of host side
+
+[source,sh]
+----
+$ mkdir build
+$ cd build
+
+$ cmake ../ -G Ninja \
+    -DCMAKE_BUILD_TYPE=RelWithDebInfo
+$ ninja
+----
+
+Additionaly, setup temporary OpenCL runtime environment.
+
+[source,sh]
+----
+$ mkdir icd
+
+$ echo /path/to/baremetal_crt_host/build/libbmetal.so \
+    > /path/to/baremetal_crt_host/icd/baremetal_crt_host.icd
+$ export OCL_ICD_VENDORS=/path/to/baremetal_crt_host/icd
+----
+
+Build test application and run.
+
+[source,sh]
+----
+$ cd test
+
+$ make
+
+$ ./vecadd /path/to/baremetal_crt/test/vecadd
+----
