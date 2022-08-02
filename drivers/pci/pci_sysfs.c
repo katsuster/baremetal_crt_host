@@ -77,6 +77,9 @@ cl_int pci_sysfs_get_addr(struct pci_sysfs_priv *prv, uint64_t paddr, uint64_t l
 		return CL_SUCCESS;
 	}
 
+	log_err("Invalid paddr: 0x%" PRIx64 "-0x%" PRIx64 "\n",
+		paddr, paddr + len);
+
 	return CL_INVALID_VALUE;
 }
 
