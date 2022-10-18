@@ -419,6 +419,9 @@ static cl_int prg_elf_read_ph(struct elf_info *elf)
 		chunk.paddr = prg->p_paddr;
 		chunk.buf = src;
 		chunk.size = prg->p_filesz;
+		chunk.readonly = (prg->p_flags & PF_W) == 0;
+		chunk.loaded = 0;
+
 		r = prg_set_chunk(elf->prg, i, &chunk);
 		if (r != CL_SUCCESS) {
 			return r;

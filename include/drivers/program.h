@@ -11,6 +11,8 @@ struct program_chunk {
 	uint64_t paddr;
 	const void *buf;
 	cl_uint size;
+	int readonly;
+	int loaded;
 };
 
 struct program_comm {

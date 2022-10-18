@@ -373,7 +373,18 @@ cl_int in_clEnqueueNDRangeKernel(cl_command_queue command_queue,
 			return r;
 		}
 
+		if (chunk.readonly && chunk.loaded) {
+			continue;
+		}
+
 		r = dev_write_mem(dev, chunk.paddr, chunk.buf, chunk.size);
+		if (r != CL_SUCCESS) {
+			return r;
+		}
+
+		chunk.loaded = 1;
+
+		r = prg_set_chunk(prg, i, &chunk);
 		if (r != CL_SUCCESS) {
 			return r;
 		}
