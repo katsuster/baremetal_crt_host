@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <CL/opencl.h>
 
@@ -194,6 +195,7 @@ int main(int argc, char *argv[])
 	}
 
 	for (int j = 0; j < 5; j++) {
+		struct timeval st, ed, ela;
 		// Allocate memory for each vector on host
 		double *h_a = (double *)malloc(bytes);
 		double *h_b = (double *)malloc(bytes);
@@ -204,6 +206,8 @@ int main(int argc, char *argv[])
 			h_a[i] = sinf(i) * sinf(i) + j;
 			h_b[i] = cosf(i) * cosf(i) + j;
 		}
+
+		gettimeofday(&st, NULL);
 
 		// Write our data set into the input array in device memory
 		err = clEnqueueWriteBuffer(queue, d_a, CL_TRUE, 0, bytes, h_a, 0, NULL, NULL);
@@ -231,6 +235,9 @@ int main(int argc, char *argv[])
 			return 0;
 		}
 
+		gettimeofday(&ed, NULL);
+		timersub(&ed, &st, &ela);
+
 		// Read the results from the device
 		err = clEnqueueReadBuffer(queue, d_c, CL_TRUE, 0, bytes, h_c, 0, NULL, NULL);
 		if (err != CL_SUCCESS) {
@@ -244,6 +251,7 @@ int main(int argc, char *argv[])
 			sum += h_c[i];
 		}
 		printf("final result: %f\n", sum / n);
+		printf("  time: %d.%06d\n", (int)ela.tv_sec, (int)ela.tv_usec);
 
 		free(h_a);
 		free(h_b);
