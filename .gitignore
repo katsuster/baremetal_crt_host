@@ -1,5 +1,6 @@
 *.o
 
 # test applications
+/test/sgemm
 /test/vecadd
 /test/vecaddf
