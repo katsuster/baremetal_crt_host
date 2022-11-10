@@ -23,7 +23,9 @@ static void *pci_sysfs_memcpy_slow(void *dest, const void *src, size_t n)
 	char *d = dest;
 	const char *s = src;
 
-	for (; n; n--, d++, s++) *d = *s;
+	for (; n; n--, d++, s++) {
+		*d = *s;
+	}
 
 	return dest;
 }
@@ -34,15 +36,18 @@ static void *pci_sysfs_memcpy_slow(void *dest, const void *src, size_t n)
  */
 static void *pci_sysfs_memcpy(void *dest, const void *src, size_t n)
 {
-	if (((uintptr_t)dest & 0x3) != 0 || ((uintptr_t)src & 0x3) != 0) {
+	if (((uintptr_t)dest & 0x7) != 0 || ((uintptr_t)src & 0x7) != 0) {
 		/* not safe */
 		return pci_sysfs_memcpy_slow(dest, src, n);
 	}
 
-	uint32_t *d = dest;
-	const uint32_t *s = src;
+	uint64_t *d = dest;
+	const uint64_t *s = src;
 
-	for (; n >= 4; n -= 4, d++, s++) *d = *s;
+	for (; n >= 8; n -= 8, d++, s++) {
+		*d = *s;
+	}
+
 	if (n > 0) {
 		pci_sysfs_memcpy_slow(d, s, n);
 	}
