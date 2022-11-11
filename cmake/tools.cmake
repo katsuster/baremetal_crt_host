@@ -41,6 +41,39 @@ function(prj_compile_options_ifdef conf opt)
   endif()
 endfunction()
 
+# Do target_link_directories() for project
+function(prj_link_directories scope item)
+  target_link_directories(${PRJ_LIB_NAME} ${scope} ${item} ${ARGN})
+endfunction()
+
+function(prj_link_directories_ifdef conf scope item)
+  if(${${conf}})
+    prj_link_directories(${scope} ${item} ${ARGN})
+  endif()
+endfunction()
+
+# Do target_link_options() for project
+function(prj_link_options opt)
+  target_link_options(${PRJ_LIB_NAME} PRIVATE ${opt} ${ARGN})
+endfunction()
+
+function(prj_link_options_ifdef conf opt)
+  if(${${conf}})
+    prj_link_options(${opt} ${ARGN})
+  endif()
+endfunction()
+
+# Do target_link_libraries() for project
+function(prj_link_libraries item)
+  target_link_libraries(${PRJ_LIB_NAME} PRIVATE ${item} ${ARGN})
+endfunction()
+
+function(prj_link_libraries_ifdef conf item)
+  if(${${conf}})
+    prj_link_libraries(${item} ${ARGN})
+  endif()
+endfunction()
+
 # Import Kconfig-like config variables to cmake environment
 # from a specified config file.
 #
