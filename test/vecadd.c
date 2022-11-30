@@ -235,15 +235,15 @@ int main(int argc, char *argv[])
 			return 0;
 		}
 
-		gettimeofday(&ed, NULL);
-		timersub(&ed, &st, &ela);
-
 		// Read the results from the device
 		err = clEnqueueReadBuffer(queue, d_c, CL_TRUE, 0, bytes, h_c, 0, NULL, NULL);
 		if (err != CL_SUCCESS) {
 			printf("%s:%d err:%d\n", __func__, __LINE__, err);
 			return 0;
 		}
+
+		gettimeofday(&ed, NULL);
+		timersub(&ed, &st, &ela);
 
 		//Sum up vector c and print result divided by n, this should equal 1 within error
 		double sum = 0;
