@@ -18,12 +18,9 @@ Tools::
 
 [source,sh]
 ----
-$ mkdir build
-$ cd build
-
-$ cmake ../ -G Ninja \
+$ cmake ./ -G Ninja -B build \
     -DCMAKE_BUILD_TYPE=RelWithDebInfo
-$ ninja
+$ ninja -C build
 ----
 
 Additionaly, setup temporary OpenCL runtime environment.
