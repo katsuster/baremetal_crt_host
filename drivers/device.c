@@ -164,7 +164,7 @@ cl_int dev_add(cl_device_id dev)
 
 cl_int dev_remove(cl_device_id dev)
 {
-	cl_device_id d = &in_head;
+	cl_device_id d = &in_head, d_prev;
 	cl_int r, res = CL_SUCCESS;
 	int found = 0;
 
@@ -173,6 +173,7 @@ cl_int dev_remove(cl_device_id dev)
 	}
 
 	while (d->dev_next != NULL) {
+		d_prev = d;
 		d = d->dev_next;
 		if (d == dev) {
 			found = 1;
@@ -193,7 +194,7 @@ cl_int dev_remove(cl_device_id dev)
 
 	dev->enabled = 0;
 
-	d->dev_next = dev->dev_next;
+	d_prev->dev_next = dev->dev_next;
 	atomic_fetch_add_explicit(&in_dev_num, -1, memory_order_relaxed);
 
 	return res;
