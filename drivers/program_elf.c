@@ -127,6 +127,9 @@ static cl_int prg_elf_fini(cl_program prg)
 {
 	struct elf_info *elf = prg->priv;
 
+	if (elf == NULL) {
+		return CL_SUCCESS;
+	}
 	prg->priv = NULL;
 
 	if (elf->shs != NULL) {
